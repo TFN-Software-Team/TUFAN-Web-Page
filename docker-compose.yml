@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Veritabanı Servisi
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Backend (FastAPI) Servisi
+  backend:
+    build: ./backend
+    container_name: fastapi_backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/mydatabase
+    depends_on:
+      - db
+
+  # Frontend (React) Servisi
+  frontend:
+    build: ./frontend
+    container_name: react_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Local node_modules'un Docker içindekini ezmemesi için
+    ports:
+      - "5173:5173"
+    stdin_open: true # React için terminal girişini açık tutar
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
