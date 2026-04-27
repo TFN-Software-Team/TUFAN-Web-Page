@@ -1,7 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from . import models, schemas
-from .database import SessionLocal
+from .database import SessionLocal, engine
+
+# Veritabanı tablolarını otomatik oluştur
+models.Base.metadata.create_all(bind=engine)
+
+# Mevcut tabloya 'admin_note' sütununu otomatik ekleme (Migration yerine basit çözüm)
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE applications ADD COLUMN admin_note VARCHAR;"))
+        conn.commit()
+    except Exception:
+        # Sütun zaten varsa hata verecektir, görmezden geliyoruz
+        pass
 
 app = FastAPI(title="TUFAN Web API")
 
@@ -86,6 +99,18 @@ def create_application(application: schemas.ApplicationCreate, db: Session = Dep
 def list_applications(db: Session = Depends(get_db)):
     applications = db.query(models.Application).all()
     return applications
+
+# 8.5. BAŞVURU GÜNCELLEME (PUT - Admin Notu İçin)
+@app.put("/applications/{application_id}", response_model=schemas.Application)
+def update_application(application_id: int, application_update: schemas.ApplicationUpdate, db: Session = Depends(get_db)):
+    db_application = db.query(models.Application).filter(models.Application.id == application_id).first()
+    if not db_application:
+        raise HTTPException(status_code=404, detail="Başvuru bulunamadı")
+    
+    db_application.admin_note = application_update.admin_note
+    db.commit()
+    db.refresh(db_application)
+    return db_application
 
 # 9. BAŞVURU SİLME (DELETE)
 @app.delete("/applications/{application_id}")

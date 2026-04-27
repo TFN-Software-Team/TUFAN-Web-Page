@@ -21,3 +21,4 @@ class Application(Base):
     student_class = Column(String)
     reason = Column(String)
     about_me = Column(String)
+    admin_note = Column(String, nullable=True)

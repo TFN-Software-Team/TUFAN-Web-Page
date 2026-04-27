@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock } from 'lucide-react';
 import API_BASE from '../config';
 
 export default function AdminDashboard() {
@@ -8,6 +8,8 @@ export default function AdminDashboard() {
   // Data States
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [adminNote, setAdminNote] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
   const [projects, setProjects] = useState([]);
 
   // Pagination State for Applications
@@ -54,8 +56,23 @@ export default function AdminDashboard() {
   const [newProject, setNewProject] = useState({ title: '', description: '' });
   const [newMediaTitle, setNewMediaTitle] = useState('');
 
+  // Last Modified State
+  const [lastModified, setLastModified] = useState({
+    about: localStorage.getItem('last_mod_about'),
+    features: localStorage.getItem('last_mod_features'),
+    projects: localStorage.getItem('last_mod_projects'),
+    media: localStorage.getItem('last_mod_media'),
+    social: localStorage.getItem('last_mod_social')
+  });
+
   // Helper to format date
   const getNowString = () => new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const updateLastModified = (key) => {
+    const now = getNowString();
+    localStorage.setItem(`last_mod_${key}`, now);
+    setLastModified(prev => ({ ...prev, [key]: now }));
+  };
 
   // --- FEATURE CARDS ---
   const openFeatureModal = (feature = null) => {
@@ -79,7 +96,7 @@ export default function AdminDashboard() {
     }
     setFeatureCards(updated);
     localStorage.setItem('site_feature_cards', JSON.stringify(updated));
-    localStorage.setItem('last_mod_features', getNowString());
+    updateLastModified('features');
     setShowFeatureModal(false);
   };
 
@@ -88,20 +105,20 @@ export default function AdminDashboard() {
       const updated = featureCards.filter(f => f.id !== id);
       setFeatureCards(updated);
       localStorage.setItem('site_feature_cards', JSON.stringify(updated));
-      localStorage.setItem('last_mod_features', getNowString());
+      updateLastModified('features');
     });
   };
 
   const fetchApplications = async () => {
     try {
-      const res = await fetch('${API_BASE}/applications/');
+      const res = await fetch(`${API_BASE}/applications/`);
       if (res.ok) setApplications(await res.json());
     } catch (err) { console.error(err); }
   };
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('${API_BASE}/projeler/');
+      const res = await fetch(`${API_BASE}/projeler/`);
       if (res.ok) setProjects(await res.json());
     } catch (err) { console.error(err); }
   };
@@ -151,12 +168,13 @@ export default function AdminDashboard() {
     localStorage.setItem('site_about_text', aboutText);
     localStorage.setItem('site_hero_title1', heroTitle1);
     localStorage.setItem('site_hero_title2', heroTitle2);
-    localStorage.setItem('last_mod_about', getNowString());
+    updateLastModified('about');
   };
 
   const handleSaveSocial = (e) => {
     e.preventDefault();
     localStorage.setItem('site_social_links', JSON.stringify(socialLinks));
+    updateLastModified('social');
   };
 
   const toggleAppsOpen = () => {
@@ -193,6 +211,7 @@ export default function AdminDashboard() {
       if (res.ok) {
         setShowProjectModal(false);
         fetchProjects();
+        updateLastModified('projects');
       }
     } catch (err) { alert('Hata oluştu.'); }
   };
@@ -201,7 +220,10 @@ export default function AdminDashboard() {
     requestConfirm("Bu projeyi kalıcı olarak silmek istediğinize emin misiniz?", async () => {
       try {
         const res = await fetch(`${API_BASE}/projeler/${id}`, { method: 'DELETE' });
-        if (res.ok) fetchProjects();
+        if (res.ok) {
+          fetchProjects();
+          updateLastModified('projects');
+        }
       } catch (err) { alert('Hata oluştu.'); }
     });
   };
@@ -210,7 +232,10 @@ export default function AdminDashboard() {
     requestConfirm("Tüm projeleri kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", async () => {
       try {
         const res = await fetch(`${API_BASE}/projeler/`, { method: 'DELETE' });
-        if (res.ok) fetchProjects();
+        if (res.ok) {
+          fetchProjects();
+          updateLastModified('projects');
+        }
       } catch (err) { alert('Hata oluştu.'); }
     });
   };
@@ -237,6 +262,7 @@ export default function AdminDashboard() {
     }
     setMediaItems(updated);
     localStorage.setItem('site_media_items', JSON.stringify(updated));
+    updateLastModified('media');
     setShowMediaModal(false);
   };
 
@@ -245,6 +271,7 @@ export default function AdminDashboard() {
       const updated = mediaItems.filter(m => m.id !== id);
       setMediaItems(updated);
       localStorage.setItem('site_media_items', JSON.stringify(updated));
+      updateLastModified('media');
     });
   };
 
@@ -252,6 +279,7 @@ export default function AdminDashboard() {
     requestConfirm("Tüm medyaları kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", () => {
       setMediaItems([]);
       localStorage.setItem('site_media_items', JSON.stringify([]));
+      updateLastModified('media');
     });
   };
 
@@ -279,6 +307,34 @@ export default function AdminDashboard() {
         }
       } catch (err) { alert('Hata oluştu.'); }
     });
+  };
+
+  const handleSelectApplication = (app) => {
+    setSelectedApplication(app);
+    setAdminNote(app.admin_note || '');
+  };
+
+  const handleSaveAdminNote = async () => {
+    if (!selectedApplication) return;
+    setIsSavingNote(true);
+    try {
+      const res = await fetch(`${API_BASE}/applications/${selectedApplication.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_note: adminNote })
+      });
+      if (res.ok) {
+        const updatedApp = await res.json();
+        setSelectedApplication(updatedApp);
+        setApplications(apps => apps.map(a => a.id === updatedApp.id ? updatedApp : a));
+      } else {
+        console.error('Not kaydedilirken hata oluştu.');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingNote(false);
+    }
   };
 
   // --- END APPLICATIONS ---
@@ -374,7 +430,14 @@ export default function AdminDashboard() {
         {/* --- ABOUT TAB --- */}
         {activeTab === 'about' && (
           <div className="animate-fade-in">
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Biz Kimiz Düzenle</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Biz Kimiz Düzenle</h2>
+              {lastModified.about && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                  <Clock size={12} /> Son değişiklik: {lastModified.about}
+                </span>
+              )}
+            </div>
             <form onSubmit={handleSaveAbout}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
@@ -401,8 +464,15 @@ export default function AdminDashboard() {
         {/* --- FEATURES TAB --- */}
         {activeTab === 'features' && (
           <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Özellik Kartları</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Özellik Kartları</h2>
+                {lastModified.features && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                    <Clock size={12} /> Son değişiklik: {lastModified.features}
+                  </span>
+                )}
+              </div>
               <button onClick={() => openFeatureModal()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Plus size={16} /> Yeni Kart
               </button>
@@ -434,8 +504,15 @@ export default function AdminDashboard() {
         {/* --- PROJECTS TAB --- */}
         {activeTab === 'projects' && (
           <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Mevcut Projeler</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Mevcut Projeler</h2>
+                {lastModified.projects && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                    <Clock size={12} /> Son değişiklik: {lastModified.projects}
+                  </span>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={handleDeleteAllProjects} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', borderColor: '#ef4444' }}>
                   <Trash2 size={16} /> Tümünü Sil
@@ -472,8 +549,15 @@ export default function AdminDashboard() {
         {/* --- MEDIA TAB --- */}
         {activeTab === 'media' && (
           <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Medya Ögeleri</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Medya Ögeleri</h2>
+                {lastModified.media && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                    <Clock size={12} /> Son değişiklik: {lastModified.media}
+                  </span>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={handleDeleteAllMedia} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', borderColor: '#ef4444' }}>
                   <Trash2 size={16} /> Tümünü Sil
@@ -507,7 +591,14 @@ export default function AdminDashboard() {
         {/* --- SOCIAL TAB --- */}
         {activeTab === 'social' && (
           <div className="animate-fade-in">
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Sosyal Medya Linkleri</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Sosyal Medya Linkleri</h2>
+              {lastModified.social && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                  <Clock size={12} /> Son değişiklik: {lastModified.social}
+                </span>
+              )}
+            </div>
             <form onSubmit={handleSaveSocial}>
               <div className="form-group">
                 <label className="form-label">Instagram URL</label>
@@ -551,9 +642,31 @@ export default function AdminDashboard() {
                   <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Neden TUFAN'ı Seçtin?</h4>
                   <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{selectedApplication.reason}</p>
                 </div>
-                <div style={{ padding: '2rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ padding: '2rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
                   <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Kendinden Bahset</h4>
                   <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{selectedApplication.about_me}</p>
+                </div>
+                
+                <div style={{ padding: '2rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--primary-color)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h4 style={{ fontSize: '1rem', color: 'var(--primary-color)', margin: 0 }}>Gizli Admin Notu</h4>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>*Sadece adminler görebilir</span>
+                  </div>
+                  <textarea
+                    className="form-textarea"
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    placeholder="Bu başvuru hakkında kendinize not bırakın..."
+                    style={{ minHeight: '100px', marginBottom: '1rem' }}
+                  ></textarea>
+                  <button 
+                    onClick={handleSaveAdminNote} 
+                    className="btn btn-primary" 
+                    disabled={isSavingNote}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    <Save size={16} /> {isSavingNote ? 'Kaydediliyor...' : 'Notu Kaydet'}
+                  </button>
                 </div>
               </div>
             ) : (
@@ -605,7 +718,7 @@ export default function AdminDashboard() {
                       </thead>
                       <tbody>
                         {paginatedApplications.map((app) => (
-                          <tr key={app.id} onClick={() => setSelectedApplication(app)} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s ease', cursor: 'pointer' }} className="hover:bg-gray-50">
+                          <tr key={app.id} onClick={() => handleSelectApplication(app)} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s ease', cursor: 'pointer' }} className="hover:bg-gray-50">
                             <td style={{ padding: '1rem' }}>#{app.id}</td>
                             <td style={{ padding: '1rem', fontWeight: '500' }}>{app.first_name} {app.last_name}</td>
                             <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.department}</td>

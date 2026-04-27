@@ -11,7 +11,6 @@ export default function Sections() {
   const [mediaItems, setMediaItems] = useState([]);
   const [socialLinks, setSocialLinks] = useState({});
   const [featureCards, setFeatureCards] = useState([]);
-  const [lastModified, setLastModified] = useState({ about: null, features: null });
 
   useEffect(() => {
     // Biz Kimiz
@@ -32,12 +31,6 @@ export default function Sections() {
         { id: 3, title: 'Güvenilirlik', description: 'Sistemlerimiz, yüksek trafikli kampüs gereksinimlerini karşılamak üzere kesintisiz ve güvenli şekilde tasarlanmıştır.' }
       ]);
     }
-
-    // Last Modified
-    setLastModified({
-      about: localStorage.getItem('last_mod_about'),
-      features: localStorage.getItem('last_mod_features')
-    });
 
     // Medya
     const savedMedia = localStorage.getItem('site_media_items');
@@ -98,12 +91,6 @@ export default function Sections() {
           <ReactMarkdown>{siteText}</ReactMarkdown>
         </div>
 
-        {lastModified.about && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.6, marginBottom: '2rem' }}>
-            <Clock size={12} /> Son değiştirme tarihi: {lastModified.about}
-          </div>
-        )}
-        
         <div className="premium-grid">
           {featureCards.map((card, index) => {
             const icons = [Users, Cpu, ShieldCheck];
@@ -119,11 +106,6 @@ export default function Sections() {
             );
           })}
         </div>
-        {lastModified.features && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.6, marginTop: '1rem', justifyContent: 'flex-end' }}>
-            <Clock size={12} /> Son değiştirme tarihi: {lastModified.features}
-          </div>
-        )}
       </section>
 
       {/* Corporate Projects Section */}

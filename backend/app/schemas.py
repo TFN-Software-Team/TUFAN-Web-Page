@@ -27,9 +27,13 @@ class ApplicationBase(BaseModel):
     student_class: str
     reason: str
     about_me: str
+    admin_note: str | None = None
 
 class ApplicationCreate(ApplicationBase):
     pass
+
+class ApplicationUpdate(BaseModel):
+    admin_note: str | None = None
 
 class Application(ApplicationBase):
     id: int
