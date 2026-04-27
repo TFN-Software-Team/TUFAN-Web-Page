@@ -422,6 +422,11 @@ a {
   color: var(--text-secondary);
 }
 
+/* Mobile-only actions bar (hamburger + theme toggle duplicate) */
+.mobile-actions {
+  display: none;
+}
+
 /* ---- Tablet (≤ 1024px) ---- */
 @media (max-width: 1024px) {
   .container {
@@ -461,6 +466,9 @@ a {
   /* --- Navbar: hide desktop links, show hamburger --- */
   .nav-links {
     display: none;
+  }
+  .mobile-actions {
+    display: flex;
   }
   .nav-hamburger {
     display: flex;
