@@ -344,7 +344,7 @@ export default function AdminDashboard() {
   const paginatedApplications = applications.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="container" style={{ marginTop: '8rem', minHeight: '80vh' }}>
+    <div className="container" style={{ marginTop: 'clamp(5rem, 10vw, 8rem)', minHeight: '80vh' }}>
 
       {/* CONFIRM MODAL */}
       <div className={`modal-overlay ${confirmModal.isOpen ? 'active' : ''}`} onClick={() => setConfirmModal({ isOpen: false, message: '', onConfirm: null })}>
@@ -415,7 +415,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Admin Paneli</h1>
+      <h1 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', marginBottom: '2rem' }}>Admin Paneli</h1>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', flexWrap: 'wrap' }}>
         <button onClick={() => setActiveTab('about')} className={`btn ${activeTab === 'about' ? 'btn-primary' : 'btn-outline'}`}>Biz Kimiz</button>
@@ -439,7 +439,7 @@ export default function AdminDashboard() {
               )}
             </div>
             <form onSubmit={handleSaveAbout}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Ana Başlık (1. Satır)</label>
                   <input type="text" className="form-input" value={heroTitle1} onChange={(e) => setHeroTitle1(e.target.value)} required />
@@ -705,7 +705,7 @@ export default function AdminDashboard() {
                 {applications.length === 0 ? (
                   <p style={{ color: 'var(--text-secondary)' }}>Henüz başvuru bulunmamaktadır.</p>
                 ) : (
-                  <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem', backgroundColor: 'var(--bg-color)' }}>
                       <thead>
                         <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
@@ -734,7 +734,7 @@ export default function AdminDashboard() {
                     </table>
 
                     {/* Pagination Controls */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', flexWrap: 'wrap', gap: '0.75rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Sayfa başına:</span>
                         <select
@@ -748,7 +748,7 @@ export default function AdminDashboard() {
                         </select>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                           Toplam {applications.length} kayıttan {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, applications.length)} arası
                         </span>

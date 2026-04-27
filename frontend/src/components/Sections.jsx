@@ -83,11 +83,11 @@ export default function Sections() {
 
       {/* Corporate Hero / About Section */}
       <section id="about" className="section animate-fade-in">
-        <h1 style={{ fontSize: '3.5rem', marginBottom: '1.5rem', maxWidth: '800px', fontWeight: '800' }}>
+        <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', marginBottom: '1.5rem', maxWidth: '800px', fontWeight: '800' }}>
           {heroTitle1}<br />
           <span style={{ color: 'var(--text-secondary)' }}>{heroTitle2}</span>
         </h1>
-        <div style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', maxWidth: '700px', margin: '0 0 2rem 0', fontWeight: '400', lineHeight: '1.8' }} className="markdown-content">
+        <div style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'var(--text-secondary)', maxWidth: '700px', margin: '0 0 2rem 0', fontWeight: '400', lineHeight: '1.8' }} className="markdown-content">
           <ReactMarkdown>{siteText}</ReactMarkdown>
         </div>
 
@@ -110,19 +110,19 @@ export default function Sections() {
 
       {/* Corporate Projects Section */}
       <section id="projects" className="section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '3rem' }}>Projeler ve Ürünler</h2>
+        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem' }}>Projeler ve Ürünler</h2>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {projects.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)' }}>Henüz proje eklenmemiş. Lütfen admin panelinden proje ekleyin.</p>
           ) : (
             projects.map((project, index) => (
-              <div key={project.id} className="premium-card" style={{ display: 'flex', gap: '3rem', alignItems: 'center', padding: '3rem' }}>
-                <div style={{ flex: '0 0 auto', padding: '1.5rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+              <div key={project.id} className="premium-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', padding: 'clamp(1.25rem, 3vw, 3rem)' }}>
+                <div style={{ flex: '0 0 auto', padding: '1.25rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
                   {index % 2 === 0 ? <Smartphone size={32} strokeWidth={1.5} /> : <Network size={32} strokeWidth={1.5} />}
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem 0' }}>{project.title}</h3>
+                <div style={{ flex: '1 1 200px' }}>
+                  <h3 style={{ fontSize: 'clamp(1.1rem, 3vw, 1.5rem)', margin: '0 0 0.5rem 0' }}>{project.title}</h3>
                   <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '1rem', maxWidth: '600px' }}>
                     {project.description}
                   </p>

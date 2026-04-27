@@ -182,7 +182,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess }) {
             ) : (
               <form onSubmit={handleApplicationSubmit} noValidate>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0 2rem' }}>
                   {/* Ad */}
                   <div className="form-group">
                     <label className="form-label">Ad</label>
@@ -260,7 +260,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess }) {
                   <select 
                     name="student_class" className="form-input" 
                     value={formData.student_class} onChange={handleChange}
-                    style={{ width: '50%', ...(errors.student_class ? { borderColor: '#ef4444' } : {}) }}
+                    style={{ width: '100%', ...(errors.student_class ? { borderColor: '#ef4444' } : {}) }}
                   >
                     <option value="" disabled>Sınıf seçiniz</option>
                     {CLASS_OPTIONS.map(opt => (
