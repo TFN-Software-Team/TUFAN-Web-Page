@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel
+from pydantic import BaseModel
 
 # Temel proje özellikleri
 class ProjectBase(BaseModel):
@@ -14,4 +14,25 @@ class Project(ProjectBase):
     id: int
 
     class Config:
-        from_attributes = True # ORM nesnelerini JSON'a çevirebilmek için gerekli
+        from_attributes = True
+
+# Başvuru formu özellikleri
+class ApplicationBase(BaseModel):
+    first_name: str
+    last_name: str
+    phone: str
+    email: str
+    faculty: str
+    department: str
+    student_class: str
+    reason: str
+    about_me: str
+
+class ApplicationCreate(ApplicationBase):
+    pass
+
+class Application(ApplicationBase):
+    id: int
+
+    class Config:
+        from_attributes = True

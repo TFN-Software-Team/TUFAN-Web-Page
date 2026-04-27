@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import SessionLocal
@@ -7,19 +7,15 @@ app = FastAPI(title="TUFAN Web API")
 
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="TUFAN Web API")
-
 # --- CORS AYARLARI BAŞLANGICI ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], # Sadece React'in çalıştığı bu adrese izin ver
+    allow_origins=["*"],  # Tüm kaynaklara izin ver (ağdaki diğer cihazlar dahil)
     allow_credentials=True,
-    allow_methods=["*"], # GET, POST, PUT, DELETE tüm metotlara izin ver
-    allow_headers=["*"], # Tüm başlık (header) türlerine izin ver
+    allow_methods=["*"],  # GET, POST, PUT, DELETE tüm metotlara izin ver
+    allow_headers=["*"],  # Tüm başlık (header) türlerine izin ver
 )
 # --- CORS AYARLARI BİTİŞİ ---
-
-# ... dosyanın geri kalanı aynı şekilde kalacak (get_db, @app.post, @app.get vs.)c
 
 # 1. Veritabanı Oturumu (Session) Yönetimi
 def get_db():
@@ -32,28 +28,80 @@ def get_db():
 # 2. PROJE EKLEME (POST)
 @app.post("/projeler/", response_model=schemas.Project)
 def proje_olustur(proje: schemas.ProjectCreate, db: Session = Depends(get_db)):
-    
-    # Adım 1: Kullanıcıdan gelen JSON verisini (proje) alıp, SQLAlchemy Veritabanı Modeline çeviriyoruz.
-    yeni_proje = models.Project(title=proje.title, description=proje.description)
-    
-    # Adım 2: Oluşturduğumuz bu yeni satırı veritabanı oturumuna ekliyoruz.
+    yeni_proje = models.Project(**proje.dict())
     db.add(yeni_proje)
-    
-    # Adım 3: İşlemi onaylayıp veritabanına kalıcı olarak kaydediyoruz (Commit).
     db.commit()
-    
-    # Adım 4: Veritabanının otomatik oluşturduğu ID numarasını (örn: id=1) yakalamak için veriyi yeniliyoruz.
     db.refresh(yeni_proje)
-    
-    # Adım 5: Kaydedilen veriyi kullanıcıya geri döndürüyoruz.
     return yeni_proje
 
 # 3. PROJELERİ LİSTELEME (GET)
 @app.get("/projeler/", response_model=list[schemas.Project])
 def projeleri_listele(db: Session = Depends(get_db)):
-    
-    # Adım 1: Veritabanına gidip 'Project' tablosundaki tüm satırları sorguluyoruz (.all()).
     projeler = db.query(models.Project).all()
-    
-    # Adım 2: Bulunan listeyi kullanıcıya gönderiyoruz.
     return projeler
+
+# 4. PROJE GÜNCELLEME (PUT)
+@app.put("/projeler/{proje_id}", response_model=schemas.Project)
+def proje_guncelle(proje_id: int, proje: schemas.ProjectCreate, db: Session = Depends(get_db)):
+    db_proje = db.query(models.Project).filter(models.Project.id == proje_id).first()
+    if not db_proje:
+        raise HTTPException(status_code=404, detail="Proje bulunamadı")
+    
+    for key, value in proje.dict().items():
+        setattr(db_proje, key, value)
+    
+    db.commit()
+    db.refresh(db_proje)
+    return db_proje
+
+# 5. PROJE SİLME (DELETE)
+@app.delete("/projeler/{proje_id}")
+def proje_sil(proje_id: int, db: Session = Depends(get_db)):
+    db_proje = db.query(models.Project).filter(models.Project.id == proje_id).first()
+    if not db_proje:
+        raise HTTPException(status_code=404, detail="Proje bulunamadı")
+    
+    db.delete(db_proje)
+    db.commit()
+    return {"message": "Proje silindi"}
+
+# 6. TÜM PROJELERİ SİLME (DELETE ALL)
+@app.delete("/projeler/")
+def projeleri_sil(db: Session = Depends(get_db)):
+    db.query(models.Project).delete()
+    db.commit()
+    return {"message": "Tüm projeler silindi"}
+
+# 7. BAŞVURU EKLEME (POST)
+@app.post("/applications/", response_model=schemas.Application)
+def create_application(application: schemas.ApplicationCreate, db: Session = Depends(get_db)):
+    db_application = models.Application(**application.dict())
+    db.add(db_application)
+    db.commit()
+    db.refresh(db_application)
+    return db_application
+
+# 8. BAŞVURULARI LİSTELEME (GET)
+@app.get("/applications/", response_model=list[schemas.Application])
+def list_applications(db: Session = Depends(get_db)):
+    applications = db.query(models.Application).all()
+    return applications
+
+# 9. BAŞVURU SİLME (DELETE)
+@app.delete("/applications/{application_id}")
+def delete_application(application_id: int, db: Session = Depends(get_db)):
+    db_application = db.query(models.Application).filter(models.Application.id == application_id).first()
+    if not db_application:
+        raise HTTPException(status_code=404, detail="Başvuru bulunamadı")
+    
+    db.delete(db_application)
+    db.commit()
+    return {"message": "Başvuru silindi"}
+
+# 10. TÜM BAŞVURULARI SİLME (DELETE ALL)
+# 10. TÜM BAŞVURULARI SİLME (DELETE ALL)
+@app.delete("/applications/")
+def delete_all_applications(db: Session = Depends(get_db)):
+    db.query(models.Application).delete()
+    db.commit()
+    return {"message": "Tüm başvurular silindi"}
