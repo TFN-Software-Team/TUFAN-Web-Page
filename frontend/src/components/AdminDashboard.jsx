@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import API_BASE from '../config';
 
 export default function AdminDashboard() {
@@ -46,6 +46,7 @@ export default function AdminDashboard() {
   const [showFeatureModal, setShowFeatureModal] = useState(false);
   const [editingFeature, setEditingFeature] = useState(null);
   const [newFeature, setNewFeature] = useState({ title: '', description: '' });
+  const [showAppSettings, setShowAppSettings] = useState(false);
 
   const [appsOpen, setAppsOpen] = useState(() => {
     const saved = localStorage.getItem('site_apps_open');
@@ -148,12 +149,13 @@ export default function AdminDashboard() {
   }, [activeTab]);
 
   const exportToCSV = () => {
-    const headers = ['ID', 'Ad', 'Soyad', 'Telefon', 'E-posta', 'Fakulte', 'Bolum', 'Sinif', 'Ekip', 'Neden Tufan', 'Kendinden Bahset'];
+    const headers = ['ID', 'Ad', 'Soyad', 'Telefon', 'E-posta', 'Fakulte', 'Bolum', 'Sinif', 'Ekip', 'Neden Tufan', 'Kendinden Bahset', 'NOT'];
     const csvData = applications.map(app => {
       const safeReason = `"${app.reason?.replace(/"/g, '""') || ''}"`;
       const safeAbout = `"${app.about_me?.replace(/"/g, '""') || ''}"`;
       const safeTeam = `"${app.team?.replace(/"/g, '""') || 'Belirtilmedi'}"`;
-      return [app.id, app.first_name, app.last_name, app.phone, app.email, app.faculty, app.department, app.student_class, safeTeam, safeReason, safeAbout].join(',');
+      const safeNote = `"${app.admin_note?.replace(/"/g, '""') || ''}"`;
+      return [app.id, app.first_name, app.last_name, app.phone, app.email, app.faculty, app.department, app.student_class, safeTeam, safeReason, safeAbout, safeNote].join(',');
     });
 
     const csvContent = ["\ufeff" + headers.join(','), ...csvData].join('\n');
@@ -443,7 +445,6 @@ export default function AdminDashboard() {
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', flexWrap: 'wrap' }}>
         <button onClick={() => setActiveTab('about')} className={`btn ${activeTab === 'about' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'about' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Biz Kimiz</button>
         <button onClick={() => setActiveTab('features')} className={`btn ${activeTab === 'features' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'features' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Özellik Kartları</button>
-        <button onClick={() => setActiveTab('teams')} className={`btn ${activeTab === 'teams' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'teams' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Ekipler</button>
         <button onClick={() => setActiveTab('projects')} className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'projects' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Projeler</button>
         <button onClick={() => setActiveTab('media')} className={`btn ${activeTab === 'media' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'media' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Medya</button>
         <button onClick={() => setActiveTab('social')} className={`btn ${activeTab === 'social' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'social' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Sosyal Medya</button>
@@ -612,35 +613,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* --- TEAMS TAB --- */}
-        {activeTab === 'teams' && (
-          <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Başvuru Alınan Ekipler</h2>
-              {lastModified.teams && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
-                  <Clock size={12} /> Son değişiklik: {lastModified.teams}
-                </span>
-              )}
-            </div>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Buradan hangi ekipler için başvuru alınacağını belirleyebilirsiniz. Kapalı olan ekipler başvuru formunda görünmez.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-              {teams.map(team => (
-                <div key={team.id} style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: team.active ? 'rgba(17, 57, 150, 0.03)' : 'transparent' }}>
-                  <span style={{ fontWeight: '600', color: team.active ? 'var(--tfn-blue)' : 'var(--text-secondary)' }}>{team.name}</span>
-                  <button 
-                    onClick={() => toggleTeamActive(team.id)} 
-                    className={`btn ${team.active ? 'btn-primary' : 'btn-outline'}`}
-                    style={{ fontSize: '0.75rem', padding: '0.4rem 1rem' }}
-                  >
-                    {team.active ? 'Aktif' : 'Pasif'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* --- SOCIAL TAB --- */}
         {activeTab === 'social' && (
           <div className="animate-fade-in">
@@ -729,6 +701,45 @@ export default function AdminDashboard() {
             ) : (
               // DATABASE CRUD VIEW
               <div>
+                {/* --- TEAMS SECTION (Moved from separate tab) --- */}
+                <div style={{ marginBottom: '3rem', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '1.3rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Settings size={20} style={{ color: 'var(--text-secondary)' }} /> Başvuru Ayarları
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      {lastModified.teams && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-color)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                          <Clock size={12} /> Son değişiklik: {lastModified.teams}
+                        </span>
+                      )}
+                      <button onClick={() => setShowAppSettings(!showAppSettings)} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
+                        {showAppSettings ? <><ChevronUp size={16} /> Gizle</> : <><ChevronDown size={16} /> Göster</>}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {showAppSettings && (
+                    <div className="animate-fade-in" style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                      <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Buradan hangi ekipler için başvuru alınacağını belirleyebilirsiniz. Kapalı olan ekipler başvuru formunda görünmez.</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                        {teams.map(team => (
+                          <div key={team.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: team.active ? 'rgba(17, 57, 150, 0.05)' : 'var(--bg-color)' }}>
+                            <span style={{ fontWeight: '600', color: team.active ? 'var(--tfn-blue)' : 'var(--text-secondary)', fontSize: '0.95rem' }}>{team.name}</span>
+                            <button 
+                              onClick={() => toggleTeamActive(team.id)} 
+                              className={`btn ${team.active ? 'btn-primary' : 'btn-outline'}`}
+                              style={{ fontSize: '0.7rem', padding: '0.3rem 0.8rem' }}
+                            >
+                              {team.active ? 'Aktif' : 'Pasif'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Gelen Başvurular</h2>
