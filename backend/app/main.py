@@ -7,13 +7,15 @@ from .database import SessionLocal, engine
 # Veritabanı tablolarını otomatik oluştur
 models.Base.metadata.create_all(bind=engine)
 
-# Mevcut tabloya 'admin_note' sütununu otomatik ekleme (Migration yerine basit çözüm)
+# Mevcut tabloya sütunları ekleme
 with engine.connect() as conn:
+    from sqlalchemy import text
     try:
-        conn.execute(text("ALTER TABLE applications ADD COLUMN admin_note VARCHAR;"))
+        conn.execute(text("ALTER TABLE applications ADD COLUMN IF NOT EXISTS admin_note VARCHAR;"))
+        conn.execute(text("ALTER TABLE applications ADD COLUMN IF NOT EXISTS team VARCHAR;"))
         conn.commit()
-    except Exception:
-        # Sütun zaten varsa hata verecektir, görmezden geliyoruz
+    except Exception as e:
+        print(f"Migration error: {e}")
         pass
 
 app = FastAPI(title="TUFAN Web API")

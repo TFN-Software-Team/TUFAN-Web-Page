@@ -1,36 +1,42 @@
 :root {
   /* Color Palette - Light Mode - Premium Corporate */
   --bg-color: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
+  --bg-secondary: #f9fafb;
+  --text-primary: #000000;
+  --text-secondary: #4b5563;
   
-  --primary-color: #000000;
-  --primary-hover: #374151;
-  --accent-color: #e5e7eb;
+  /* TUFAN Brand Colors */
+  --tfn-blue: #113996;
+  --tfn-orange: #ff640a;
+  
+  --primary-color: var(--tfn-blue);
+  --primary-hover: #0d2d7a;
+  --accent-color: var(--tfn-orange);
   
   --border-color: #e5e7eb;
   
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
 
   --font-main: 'Inter', sans-serif;
 }
 
 .dark {
-  /* Color Palette - Dark Mode - Premium Corporate (Obsidian) */
-  --bg-color: #0a0a0a;
-  --bg-secondary: #111111;
-  --text-primary: #f3f4f6;
+  /* Color Palette - Dark Mode - Premium Corporate (Pure Black) */
+  --bg-color: #000000;
+  --bg-secondary: #0a0a0a;
+  --text-primary: #ffffff;
   --text-secondary: #9ca3af;
   
-  --primary-color: #ffffff;
-  --primary-hover: #e5e7eb;
-  --accent-color: #1f2937;
+  --primary-color: var(--tfn-blue);
+  --primary-hover: #1e4bb5;
+  --accent-color: var(--tfn-orange);
   
-  --border-color: #27272a;
+  --border-color: #1a1a1a;
   
   --shadow-sm: 0 4px 6px rgba(0,0,0,0.3);
 }
@@ -63,14 +69,29 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.05em;
   color: var(--text-primary);
 }
 
 h1 { font-size: 4.5rem; margin-bottom: 1.5rem; }
-h2 { font-size: 3rem; margin-bottom: 1.5rem; }
+h2 { 
+  font-size: 3rem; 
+  margin-bottom: 2rem; 
+  position: relative;
+  display: inline-block;
+}
+h2::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 0;
+  width: 40px;
+  height: 4px;
+  background-color: var(--tfn-orange);
+  border-radius: 2px;
+}
 h3 { font-size: 1.5rem; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
 
 p {
@@ -107,8 +128,9 @@ a {
   width: 100%;
   z-index: 50;
   padding: 1.5rem 0;
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid transparent;
   transition: all 0.3s ease;
 }
@@ -239,8 +261,9 @@ a {
 
 .form-input:focus, .form-textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--tfn-orange);
   background-color: var(--bg-color);
+  box-shadow: 0 0 0 4px rgba(255, 100, 10, 0.1);
 }
 
 .form-textarea {
@@ -281,9 +304,9 @@ a {
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  transform: scale(0.98);
-  transition: all 0.3s ease;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: scale(0.95);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.3);
 }
 
 .modal-overlay.active .modal-content {
@@ -306,13 +329,74 @@ a {
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.6s ease forwards;
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Premium Aesthetics */
+.gradient-text {
+  background: linear-gradient(270deg, var(--tfn-blue), var(--tfn-orange), #ff9a44, var(--tfn-blue));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientAnimation 8s ease infinite;
+}
+
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--bg-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.15);
+  transform: rotate(45deg) translate(-50%, -50%);
+  transition: all 0.5s ease;
+  opacity: 0;
+}
+
+.btn-primary:hover::after {
+  opacity: 1;
+  transform: rotate(45deg) translate(50%, 50%);
 }
 
 /* Premium Grids */
@@ -326,12 +410,34 @@ a {
   padding: 2.5rem;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  transition: border-color 0.3s ease;
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: var(--tfn-blue);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
 }
 
 .premium-card:hover {
-  border-color: var(--text-primary);
+  border-color: var(--tfn-orange);
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(255, 100, 10, 0.1);
+}
+
+.premium-card:hover::before {
+  background-color: var(--tfn-orange);
+  transform: scaleX(1);
 }
 
 /* Scrollbar customization */
@@ -347,6 +453,20 @@ a {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+::after {
+  box-sizing: border-box;
+}
+
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: var(--tfn-orange);
+  z-index: 1001;
+  transition: width 0.1s ease-out;
 }
 
 /* ============================================

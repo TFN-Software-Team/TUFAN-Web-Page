@@ -14,6 +14,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess }) {
     faculty: '',
     department: '',
     student_class: '',
+    team: '',
     reason: '',
     about_me: ''
   });
@@ -22,6 +23,11 @@ export default function Modals({ activeModal, onClose, onLoginSuccess }) {
   const [errors, setErrors] = useState({});
 
   const appsOpen = localStorage.getItem('site_apps_open') !== 'false';
+  
+  const activeTeams = JSON.parse(localStorage.getItem('site_teams') || '[]')
+    .filter(t => t.active)
+    .map(t => t.name)
+    .sort((a, b) => a.localeCompare(b, 'tr'));
 
   // Only allow letters and spaces for name fields
   const handleNameChange = (e) => {
@@ -87,6 +93,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess }) {
     if (!formData.faculty.trim()) newErrors.faculty = 'Fakülte alanı zorunludur.';
     if (!formData.department.trim()) newErrors.department = 'Bölüm alanı zorunludur.';
     if (!formData.student_class) newErrors.student_class = 'Sınıf seçimi zorunludur.';
+    if (!formData.team) newErrors.team = 'Ekip seçimi zorunludur.';
     if (!formData.reason.trim()) newErrors.reason = 'Bu alan zorunludur.';
     if (!formData.about_me.trim()) newErrors.about_me = 'Bu alan zorunludur.';
 
@@ -108,7 +115,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess }) {
 
       if (response.ok) {
         onClose();
-        setFormData({ first_name: '', last_name: '', phone: '', email: '', faculty: '', department: '', student_class: '', reason: '', about_me: '' });
+        setFormData({ first_name: '', last_name: '', phone: '', email: '', faculty: '', department: '', student_class: '', team: '', reason: '', about_me: '' });
         setErrors({});
       } else {
         alert('Başvuru sırasında bir hata oluştu. Lütfen tekrar deneyin.');
@@ -268,6 +275,26 @@ export default function Modals({ activeModal, onClose, onLoginSuccess }) {
                     ))}
                   </select>
                   {errors.student_class && <div style={errorStyle}>{errors.student_class}</div>}
+                </div>
+
+                {/* Ekip Seçimi - Dropdown */}
+                <div className="form-group" style={{ marginTop: '1rem' }}>
+                  <label className="form-label">Hangi ekibe katılmak istersiniz?</label>
+                  <select 
+                    name="team" className="form-input" 
+                    value={formData.team} onChange={handleChange}
+                    style={{ width: '100%', ...(errors.team ? { borderColor: '#ef4444' } : {}) }}
+                  >
+                    <option value="" disabled>Ekip seçiniz</option>
+                    {activeTeams.length > 0 ? (
+                      activeTeams.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))
+                    ) : (
+                      <option disabled>Şu an aktif ekip bulunmamaktadır.</option>
+                    )}
+                  </select>
+                  {errors.team && <div style={errorStyle}>{errors.team}</div>}
                 </div>
 
                 {/* Neden TUFAN */}

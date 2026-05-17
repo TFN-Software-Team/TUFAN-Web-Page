@@ -37,7 +37,8 @@ services:
       - /app/node_modules # Local node_modules'un Docker içindekini ezmemesi için
     ports:
       - "5173:5173"
-    stdin_open: true # React için terminal girişini açık tutar
+    stdin_open: true
+    tty: true
     depends_on:
       - backend
 

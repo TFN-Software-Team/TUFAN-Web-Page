@@ -57,10 +57,12 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
                 style={{ height: '50px', width: '50px', objectFit: 'contain', borderRadius: '50%', filter: isDark ? 'invert(1)' : 'none', transition: 'filter 0.3s ease' }}
               />
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontWeight: '800', lineHeight: '1' }}>TUFAN</span>
-                <span style={{ fontSize: '0.65rem', fontWeight: '400', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>ELEKTROMOBİL</span>
+                <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                  <span style={{ fontWeight: '800', lineHeight: '1' }}>TUFAN</span>
+                  {isAdmin && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.2rem' }}>ADMIN</span>}
+                </div>
+                {!isAdmin && <span style={{ fontSize: '0.65rem', fontWeight: '400', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>ELEKTROMOBİL</span>}
               </div>
-              {isAdmin && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>ADMIN</span>}
             </a>
           </div>
 
@@ -97,11 +99,8 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
             )}
           </div>
 
-          {/* Mobile: theme + hamburger */}
+          {/* Mobile: hamburger (Theme toggle removed) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} className="mobile-actions">
-            <button onClick={toggleTheme} className="btn-icon" title="Tema Değiştir">
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
             <button
               className={`nav-hamburger ${mobileOpen ? 'open' : ''}`}
               onClick={() => setMobileOpen(v => !v)}

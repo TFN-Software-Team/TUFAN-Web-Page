@@ -27,6 +27,7 @@ class ApplicationBase(BaseModel):
     student_class: str
     reason: str
     about_me: str
+    team: str | None = None
     admin_note: str | None = None
 
 class ApplicationCreate(ApplicationBase):

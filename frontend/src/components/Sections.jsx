@@ -68,14 +68,14 @@ export default function Sections() {
       
       {/* Page Header Indicator */}
       <div style={{ textAlign: 'center', marginBottom: '4rem', opacity: 0.8 }} className="animate-fade-in">
-        <span style={{ 
-          fontSize: '0.8rem', 
-          fontWeight: '700', 
+        <span className="gradient-text" style={{ 
+          fontSize: '0.85rem', 
+          fontWeight: '800', 
           letterSpacing: '0.4em', 
-          color: 'var(--text-secondary)',
           textTransform: 'uppercase',
           borderBottom: '1px solid var(--border-color)',
-          paddingBottom: '0.5rem'
+          paddingBottom: '0.5rem',
+          display: 'inline-block'
         }}>
           TUFAN ELEKTROMOBİL
         </span>
@@ -83,8 +83,8 @@ export default function Sections() {
 
       {/* Corporate Hero / About Section */}
       <section id="about" className="section animate-fade-in">
-        <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', marginBottom: '1.5rem', maxWidth: '800px', fontWeight: '800' }}>
-          {heroTitle1}<br />
+        <h1 style={{ fontSize: 'clamp(2.5rem, 7vw, 4.5rem)', marginBottom: '1.5rem', maxWidth: '800px', fontWeight: '800', lineHeight: '1.1' }}>
+          <span className="gradient-text">{heroTitle1}</span><br />
           <span style={{ color: 'var(--text-secondary)' }}>{heroTitle2}</span>
         </h1>
         <div style={{ fontSize: 'clamp(1rem, 2.5vw, 1.25rem)', color: 'var(--text-secondary)', maxWidth: '700px', margin: '0 0 2rem 0', fontWeight: '400', lineHeight: '1.8' }} className="markdown-content">
@@ -97,7 +97,20 @@ export default function Sections() {
             const Icon = icons[index % icons.length];
             return (
               <div className="premium-card" key={card.id}>
-                <Icon size={28} style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }} strokeWidth={1.5} />
+                <div className="animate-float" style={{ 
+                  width: '56px', 
+                  height: '56px', 
+                  backgroundColor: 'var(--tfn-blue)', 
+                  borderRadius: '16px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  marginBottom: '1.5rem',
+                  color: '#ffffff',
+                  boxShadow: '0 10px 25px -5px rgba(17, 57, 150, 0.4)'
+                }}>
+                  <Icon size={26} strokeWidth={2} />
+                </div>
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>{card.title}</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>
                   {card.description}
@@ -108,9 +121,8 @@ export default function Sections() {
         </div>
       </section>
 
-      {/* Corporate Projects Section */}
-      <section id="projects" className="section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
-        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem' }}>Projeler ve Ürünler</h2>
+      <section id="projects" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
+        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>Projeler ve Ürünler</h2>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {projects.length === 0 ? (
@@ -134,9 +146,8 @@ export default function Sections() {
         </div>
       </section>
 
-      {/* Corporate Media Section */}
-      <section id="media" className="section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '3rem' }}>Medya ve Arşiv</h2>
+      <section id="media" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
+        <h2 style={{ fontSize: '2.5rem', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>Medya ve Arşiv</h2>
         
         <div className="premium-grid">
           {mediaItems.map(item => (

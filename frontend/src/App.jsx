@@ -21,8 +21,41 @@ export default function App() {
     setIsAdmin(false);
   };
 
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      const progress = document.getElementById('scroll-progress');
+      if (progress) progress.style.width = scrolled + '%';
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Reveal animations on scroll
+  React.useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, observerOptions);
+
+    const revealElements = document.querySelectorAll('.reveal');
+    revealElements.forEach(el => observer.observe(el));
+
+    return () => revealElements.forEach(el => observer.unobserve(el));
+  }, [isAdmin]);
+
   return (
     <>
+      <div id="scroll-progress"></div>
       <Navbar 
         onOpenAdminModal={openAdminModal} 
         onOpenApplicationModal={openApplicationModal}
