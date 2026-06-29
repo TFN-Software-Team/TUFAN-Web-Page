@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import API_BASE from '../config';
 
 export default function AdminDashboard() {
@@ -46,10 +46,25 @@ export default function AdminDashboard() {
   const [showFeatureModal, setShowFeatureModal] = useState(false);
   const [editingFeature, setEditingFeature] = useState(null);
   const [newFeature, setNewFeature] = useState({ title: '', description: '' });
+  const [showAppSettings, setShowAppSettings] = useState(false);
 
   const [appsOpen, setAppsOpen] = useState(() => {
     const saved = localStorage.getItem('site_apps_open');
     return saved === null ? true : saved === 'true';
+  });
+
+  const [teams, setTeams] = useState(() => {
+    const saved = localStorage.getItem('site_teams');
+    const initialTeams = [
+      { id: 1, name: 'Batarya Ekibi', active: true },
+      { id: 2, name: 'Yazılım Ekibi', active: true },
+      { id: 3, name: 'Motor Ekibi', active: true },
+      { id: 4, name: 'Motor Sürücü Ekibi', active: true },
+      { id: 5, name: 'Yerleşik Şarj Ekibi', active: true },
+      { id: 6, name: 'Mekanik Ekibi', active: true }
+    ];
+    const data = saved ? JSON.parse(saved) : initialTeams;
+    return data.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   });
 
   // Forms State
@@ -62,7 +77,8 @@ export default function AdminDashboard() {
     features: localStorage.getItem('last_mod_features'),
     projects: localStorage.getItem('last_mod_projects'),
     media: localStorage.getItem('last_mod_media'),
-    social: localStorage.getItem('last_mod_social')
+    social: localStorage.getItem('last_mod_social'),
+    teams: localStorage.getItem('last_mod_teams')
   });
 
   // Helper to format date
@@ -133,11 +149,13 @@ export default function AdminDashboard() {
   }, [activeTab]);
 
   const exportToCSV = () => {
-    const headers = ['ID', 'Ad', 'Soyad', 'Telefon', 'E-posta', 'Fakulte', 'Bolum', 'Sinif', 'Neden Tufan', 'Kendinden Bahset'];
+    const headers = ['ID', 'Ad', 'Soyad', 'Telefon', 'E-posta', 'Fakulte', 'Bolum', 'Sinif', 'Ekip', 'Neden Tufan', 'Kendinden Bahset', 'NOT'];
     const csvData = applications.map(app => {
       const safeReason = `"${app.reason?.replace(/"/g, '""') || ''}"`;
       const safeAbout = `"${app.about_me?.replace(/"/g, '""') || ''}"`;
-      return [app.id, app.first_name, app.last_name, app.phone, app.email, app.faculty, app.department, app.student_class, safeReason, safeAbout].join(',');
+      const safeTeam = `"${app.team?.replace(/"/g, '""') || 'Belirtilmedi'}"`;
+      const safeNote = `"${app.admin_note?.replace(/"/g, '""') || ''}"`;
+      return [app.id, app.first_name, app.last_name, app.phone, app.email, app.faculty, app.department, app.student_class, safeTeam, safeReason, safeAbout, safeNote].join(',');
     });
 
     const csvContent = ["\ufeff" + headers.join(','), ...csvData].join('\n');
@@ -181,6 +199,13 @@ export default function AdminDashboard() {
     const newVal = !appsOpen;
     setAppsOpen(newVal);
     localStorage.setItem('site_apps_open', newVal);
+  };
+
+  const toggleTeamActive = (id) => {
+    const updated = teams.map(t => t.id === id ? { ...t, active: !t.active } : t);
+    setTeams(updated);
+    localStorage.setItem('site_teams', JSON.stringify(updated));
+    updateLastModified('teams');
   };
 
   // --- PROJECTS ---
@@ -357,7 +382,7 @@ export default function AdminDashboard() {
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{confirmModal.message}</p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
             <button className="btn btn-outline" onClick={() => setConfirmModal({ isOpen: false, message: '', onConfirm: null })}>İptal</button>
-            <button className="btn btn-primary" style={{ backgroundColor: '#ef4444', borderColor: '#ef4444' }} onClick={confirmModal.onConfirm}>Evet, Sil</button>
+            <button className="btn btn-primary" style={{ backgroundColor: 'var(--tfn-orange)', borderColor: 'var(--tfn-orange)' }} onClick={confirmModal.onConfirm}>Evet, Sil</button>
           </div>
         </div>
       </div>
@@ -418,12 +443,12 @@ export default function AdminDashboard() {
       <h1 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.5rem)', marginBottom: '2rem' }}>Admin Paneli</h1>
 
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', flexWrap: 'wrap' }}>
-        <button onClick={() => setActiveTab('about')} className={`btn ${activeTab === 'about' ? 'btn-primary' : 'btn-outline'}`}>Biz Kimiz</button>
-        <button onClick={() => setActiveTab('features')} className={`btn ${activeTab === 'features' ? 'btn-primary' : 'btn-outline'}`}>Özellik Kartları</button>
-        <button onClick={() => setActiveTab('projects')} className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-outline'}`}>Projeler</button>
-        <button onClick={() => setActiveTab('media')} className={`btn ${activeTab === 'media' ? 'btn-primary' : 'btn-outline'}`}>Medya</button>
-        <button onClick={() => setActiveTab('social')} className={`btn ${activeTab === 'social' ? 'btn-primary' : 'btn-outline'}`}>Sosyal Medya</button>
-        <button onClick={() => setActiveTab('applications')} className={`btn ${activeTab === 'applications' ? 'btn-primary' : 'btn-outline'}`}>Gelen Başvurular</button>
+        <button onClick={() => setActiveTab('about')} className={`btn ${activeTab === 'about' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'about' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Biz Kimiz</button>
+        <button onClick={() => setActiveTab('features')} className={`btn ${activeTab === 'features' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'features' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Özellik Kartları</button>
+        <button onClick={() => setActiveTab('projects')} className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'projects' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Projeler</button>
+        <button onClick={() => setActiveTab('media')} className={`btn ${activeTab === 'media' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'media' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Medya</button>
+        <button onClick={() => setActiveTab('social')} className={`btn ${activeTab === 'social' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'social' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Sosyal Medya</button>
+        <button onClick={() => setActiveTab('applications')} className={`btn ${activeTab === 'applications' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'applications' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Gelen Başvurular</button>
       </div>
 
       <div className="premium-card">
@@ -639,6 +664,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div style={{ padding: '2rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
+                  <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Başvurulan Ekip</h4>
+                  <p style={{ color: 'var(--tfn-blue)', fontWeight: '700', fontSize: '1.2rem' }}>{selectedApplication.team || 'Belirtilmedi'}</p>
+                </div>
+                <div style={{ padding: '2rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
                   <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Neden TUFAN'ı Seçtin?</h4>
                   <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{selectedApplication.reason}</p>
                 </div>
@@ -672,6 +701,45 @@ export default function AdminDashboard() {
             ) : (
               // DATABASE CRUD VIEW
               <div>
+                {/* --- TEAMS SECTION (Moved from separate tab) --- */}
+                <div style={{ marginBottom: '3rem', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '1.3rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Settings size={20} style={{ color: 'var(--text-secondary)' }} /> Başvuru Ayarları
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      {lastModified.teams && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-color)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                          <Clock size={12} /> Son değişiklik: {lastModified.teams}
+                        </span>
+                      )}
+                      <button onClick={() => setShowAppSettings(!showAppSettings)} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
+                        {showAppSettings ? <><ChevronUp size={16} /> Gizle</> : <><ChevronDown size={16} /> Göster</>}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {showAppSettings && (
+                    <div className="animate-fade-in" style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                      <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Buradan hangi ekipler için başvuru alınacağını belirleyebilirsiniz. Kapalı olan ekipler başvuru formunda görünmez.</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                        {teams.map(team => (
+                          <div key={team.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: team.active ? 'rgba(17, 57, 150, 0.05)' : 'var(--bg-color)' }}>
+                            <span style={{ fontWeight: '600', color: team.active ? 'var(--tfn-blue)' : 'var(--text-secondary)', fontSize: '0.95rem' }}>{team.name}</span>
+                            <button 
+                              onClick={() => toggleTeamActive(team.id)} 
+                              className={`btn ${team.active ? 'btn-primary' : 'btn-outline'}`}
+                              style={{ fontSize: '0.7rem', padding: '0.3rem 0.8rem' }}
+                            >
+                              {team.active ? 'Aktif' : 'Pasif'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Gelen Başvurular</h2>
@@ -711,6 +779,7 @@ export default function AdminDashboard() {
                         <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
                           <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontWeight: '600' }}>ID</th>
                           <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Ad Soyad</th>
+                          <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Başvurulan Ekip</th>
                           <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Bölüm</th>
                           <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontWeight: '600' }}>E-posta</th>
                           <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontWeight: '600', textAlign: 'right' }}>İşlemler</th>
@@ -721,6 +790,7 @@ export default function AdminDashboard() {
                           <tr key={app.id} onClick={() => handleSelectApplication(app)} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s ease', cursor: 'pointer' }} className="hover:bg-gray-50">
                             <td style={{ padding: '1rem' }}>#{app.id}</td>
                             <td style={{ padding: '1rem', fontWeight: '500' }}>{app.first_name} {app.last_name}</td>
+                            <td style={{ padding: '1rem' }}><span style={{ padding: '0.3rem 0.6rem', backgroundColor: 'rgba(17, 57, 150, 0.1)', color: 'var(--tfn-blue)', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>{app.team || '-'}</span></td>
                             <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.department}</td>
                             <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.email}</td>
                             <td style={{ padding: '1rem', textAlign: 'right' }}>
@@ -770,7 +840,7 @@ export default function AdminDashboard() {
                           >
                             Sonraki
                           </button>
-                          <button onClick={exportToCSV} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+                          <button onClick={exportToCSV} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.8rem', backgroundColor: 'var(--tfn-orange)', borderColor: 'var(--tfn-orange)' }}>
                             <Download size={16} /> Excel'e Aktar (CSV)
                           </button>
                         </div>
