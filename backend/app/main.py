@@ -85,6 +85,85 @@ def projeleri_sil(db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Tüm projeler silindi"}
 
+# --- MEDYA / ETKİNLİK ENDPOINT'LERİ ---
+@app.get("/media/", response_model=list[schemas.Media])
+def medyala_listele(db: Session = Depends(get_db)):
+    items = db.query(models.Media).all()
+    # Eğer veritabanı henüz boşsa varsayılan medyaları ekle
+    if not items:
+        default_items = [
+            {
+                "title": "TEKNOFEST Hackathon 2025",
+                "date": "Mayıs 2025",
+                "imageUrl": "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80",
+                "description": "TUFAN Elektromobil ekibi olarak katıldığımız TEKNOFEST 2025 Hackathon etkinliğinde geliştirdiğimiz yerli batarya yönetim yazılımı ve telemetri altyapımızla birincilik ödülüne layık görüldük."
+            },
+            {
+                "title": "Elektromobil Şasi Test Etkinliği",
+                "date": "Nisan 2025",
+                "imageUrl": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
+                "description": "Yeni nesil karbon fiber şasi testlerimizi başarıyla tamamladık. Aracımızın aerodinamik sürtünme katsayısı ve mukavemet testleri hedeflenen standartların üzerine çıktı."
+            },
+            {
+                "title": "Kurumsal Sponsorluk Zirvesi",
+                "date": "Mart 2025",
+                "imageUrl": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80",
+                "description": "Sanayi ortaklarımız ve ana sponsorlarımızla bir araya gelerek TUFAN Elektromobil vizyonunu ve yeni araç konseptimizi tanıttığımız gala organizasyonumuz."
+            },
+            {
+                "title": "Otonom Sürüş Çalıştayı",
+                "date": "Şubat 2025",
+                "imageUrl": "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
+                "description": "Yapay zeka ve bilgisayarlı görü ekibimizin düzenlediği 3 günlük kampüs çalıştayında araç içi görüntü işleme ve şerit takip sistemleri canlı olarak test edildi."
+            },
+            {
+                "title": "Yerli İnovasyon Sergisi",
+                "date": "Ocak 2025",
+                "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
+                "description": "Kendi geliştirdiğimiz yüksek verimlilikli motor sürücü kartlarımızı ve yerleşik şarj ünitelerimizi üniversitemiz inovasyon sergisinde öğrencilere ve akademisyenlere sunduk."
+            }
+        ]
+        for item in default_items:
+            m = models.Media(**item)
+            db.add(m)
+        db.commit()
+        items = db.query(models.Media).all()
+    return items
+
+@app.post("/media/", response_model=schemas.Media)
+def medya_olustur(medya: schemas.MediaCreate, db: Session = Depends(get_db)):
+    yeni_medya = models.Media(**medya.dict())
+    db.add(yeni_medya)
+    db.commit()
+    db.refresh(yeni_medya)
+    return yeni_medya
+
+@app.put("/media/{media_id}", response_model=schemas.Media)
+def medya_guncelle(media_id: int, medya: schemas.MediaCreate, db: Session = Depends(get_db)):
+    db_medya = db.query(models.Media).filter(models.Media.id == media_id).first()
+    if not db_medya:
+        raise HTTPException(status_code=404, detail="Medya bulunamadı")
+    for key, value in medya.dict().items():
+        setattr(db_medya, key, value)
+    db.commit()
+    db.refresh(db_medya)
+    return db_medya
+
+@app.delete("/media/{media_id}")
+def medya_sil(media_id: int, db: Session = Depends(get_db)):
+    db_medya = db.query(models.Media).filter(models.Media.id == media_id).first()
+    if not db_medya:
+        raise HTTPException(status_code=404, detail="Medya bulunamadı")
+    db.delete(db_medya)
+    db.commit()
+    return {"message": "Medya silindi"}
+
+@app.delete("/media/")
+def tum_medyalari_sil(db: Session = Depends(get_db)):
+    db.query(models.Media).delete()
+    db.commit()
+    return {"message": "Tüm medyalar silindi"}
+
 # 7. BAŞVURU EKLEME (POST)
 @app.post("/applications/", response_model=schemas.Application)
 def create_application(application: schemas.ApplicationCreate, db: Session = Depends(get_db)):

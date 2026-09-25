@@ -1,11 +1,20 @@
-// API base URL — Bulut ortamı ve yerel ağ (localhost) uyumluluğu
+// API base URL — Bulut ortamı ve yerel ağ (localhost / IP) uyumluluğu
 let API_BASE;
 
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    // Kendi bilgisayarındayken eski sistemin tıkır tıkır çalışmaya devam etsin:
-    API_BASE = `http://${window.location.hostname}:8000`;
+const hostname = window.location.hostname;
+const isLocalNetwork = 
+    hostname === 'localhost' || 
+    hostname === '127.0.0.1' || 
+    hostname.startsWith('192.168.') || 
+    hostname.startsWith('10.') || 
+    hostname.startsWith('172.') ||
+    hostname.endsWith('.local');
+
+if (isLocalNetwork) {
+    // Yerel ağdayken (bilgisayar, telefon, iPad vs.) sunucunun IP adresiyle bağlan:
+    API_BASE = `http://${hostname}:8000`;
 } else {
-    // Site internete (Render'a) çıktığında dün kurduğumuz canlı backend adresine bağlansın:
+    // Site canlı ortama (Render / Vercel vs.) çıktığında canlı backend adresine bağlansın:
     API_BASE = 'https://tufan-backend.onrender.com';
 }
 

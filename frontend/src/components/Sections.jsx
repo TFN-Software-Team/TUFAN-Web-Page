@@ -147,19 +147,30 @@ export default function Sections({ onOpenAdminModal, lang }) {
       setFeatureCards(null);
     }
 
-    // Medya — lazy initializer ile zaten yüklendi, burada sadece güncelleme yapıyoruz
-    try {
-      const savedMedia = localStorage.getItem('site_media_items');
-      if (savedMedia) {
-        const parsed = JSON.parse(savedMedia);
-        if (parsed && parsed.length > 0) setMediaItems(parsed);
-        else setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
-      } else {
-        setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
-      }
-    } catch (e) {
-      setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
-    }
+    // Medya — API'den ve fallback olarak localStorage'dan yukle
+    fetch(`${API_BASE}/media/`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setMediaItems(data);
+          localStorage.setItem('site_media_items', JSON.stringify(data));
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching media from API:', err);
+        try {
+          const savedMedia = localStorage.getItem('site_media_items');
+          if (savedMedia) {
+            const parsed = JSON.parse(savedMedia);
+            if (parsed && parsed.length > 0) setMediaItems(parsed);
+            else setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
+          } else {
+            setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
+          }
+        } catch (e) {
+          setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
+        }
+      });
 
     // Sosyal Medya
     const savedSocial = localStorage.getItem('site_social_links');

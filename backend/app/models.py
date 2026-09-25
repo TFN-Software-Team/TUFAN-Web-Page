@@ -8,6 +8,15 @@ class Project(Base):
     title = Column(String, index=True)
     description = Column(String)
 
+class Media(Base):
+    __tablename__ = "media_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    date = Column(String, nullable=True)
+    imageUrl = Column(String)
+    description = Column(String, nullable=True)
+
 class Application(Base):
     __tablename__ = "applications"
 

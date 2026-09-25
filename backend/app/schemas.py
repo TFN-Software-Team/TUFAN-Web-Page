@@ -16,6 +16,22 @@ class Project(ProjectBase):
     class Config:
         from_attributes = True
 
+# Medya ögeleri şeması
+class MediaBase(BaseModel):
+    title: str
+    date: str | None = None
+    imageUrl: str
+    description: str | None = None
+
+class MediaCreate(MediaBase):
+    pass
+
+class Media(MediaBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
 # Başvuru formu özellikleri
 class ApplicationBase(BaseModel):
     first_name: str
