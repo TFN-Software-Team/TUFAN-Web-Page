@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   const [aboutText, setAboutText] = useState(() => localStorage.getItem('site_about_text') || 'TUFAN, teknoloji ve verimliliği merkeze alan kurumsal bir öğrenci ağıdır...');
   const [heroTitle1, setHeroTitle1] = useState(() => localStorage.getItem('site_hero_title1') || 'Dijital Çözümler.');
   const [heroTitle2, setHeroTitle2] = useState(() => localStorage.getItem('site_hero_title2') || 'Maksimum Etki.');
-  const [mediaItems, setMediaItems] = useState(() => JSON.parse(localStorage.getItem('site_media_items')) || [
+  const DEFAULT_MEDIA_ITEMS = [
     {
       id: 1,
       title: 'TEKNOFEST Hackathon 2025',
@@ -65,7 +65,15 @@ export default function AdminDashboard() {
       imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
       description: 'Kendi geliştirdiğimiz yüksek verimlilikli motor sürücü kartlarımızı ve yerleşik şarj ünitelerimizi üniversitemiz inovasyon sergisinde öğrencilere ve akademisyenlere sunduk.'
     }
-  ]);
+  ];
+
+  const [mediaItems, setMediaItems] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('site_media_items'));
+      if (Array.isArray(saved) && saved.length > 0) return saved;
+    } catch (e) {}
+    return DEFAULT_MEDIA_ITEMS;
+  });
   const [socialLinks, setSocialLinks] = useState(() => {
     try {
       const saved = localStorage.getItem('site_social_links');
@@ -233,9 +241,13 @@ export default function AdminDashboard() {
       const savedMedia = localStorage.getItem('site_media_items');
       if (savedMedia) {
         const parsed = JSON.parse(savedMedia);
-        if (parsed && parsed.length > 0) setMediaItems(parsed);
+        if (parsed && parsed.length > 0) {
+          setMediaItems(parsed);
+          return;
+        }
       }
     } catch (e) {}
+    setMediaItems(DEFAULT_MEDIA_ITEMS);
   };
 
   useEffect(() => {
