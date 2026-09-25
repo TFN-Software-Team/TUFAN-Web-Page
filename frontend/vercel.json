@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/media/:id",
+      "destination": "/api/media/[id]"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://tufan-backend.onrender.com/$1"
     }
