@@ -13,10 +13,9 @@ with engine.connect() as conn:
         conn.execute(text("ALTER TABLE applications ADD COLUMN admin_note VARCHAR;"))
         conn.commit()
     except Exception:
-        # Sütun zaten varsa hata verecektir, görmezden geliyoruz
         pass
 
-app = FastAPI(title="TUFAN Web API")
+app = FastAPI(title="TUFAN Web API", redirect_slashes=False)
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,12 +24,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 # --- CORS AYARLARI BİTİŞİ ---
 
-# 1. Veritabanı Oturumu (Session) Yönetimi
 def get_db():
     db = SessionLocal()
     try:
@@ -38,7 +37,8 @@ def get_db():
     finally:
         db.close()
 
-# 2. PROJE EKLEME (POST)
+# 2. PROJE EKLEME (POST) - Çift rota desteği (slash'li ve slash'siz)
+@app.post("/projeler", response_model=schemas.Project)
 @app.post("/projeler/", response_model=schemas.Project)
 def proje_olustur(proje: schemas.ProjectCreate, db: Session = Depends(get_db)):
     yeni_proje = models.Project(**proje.dict())
@@ -48,6 +48,7 @@ def proje_olustur(proje: schemas.ProjectCreate, db: Session = Depends(get_db)):
     return yeni_proje
 
 # 3. PROJELERİ LİSTELEME (GET)
+@app.get("/projeler", response_model=list[schemas.Project])
 @app.get("/projeler/", response_model=list[schemas.Project])
 def projeleri_listele(db: Session = Depends(get_db)):
     projeler = db.query(models.Project).all()
@@ -55,6 +56,7 @@ def projeleri_listele(db: Session = Depends(get_db)):
 
 # 4. PROJE GÜNCELLEME (PUT)
 @app.put("/projeler/{proje_id}", response_model=schemas.Project)
+@app.put("/projeler/{proje_id}/", response_model=schemas.Project)
 def proje_guncelle(proje_id: int, proje: schemas.ProjectCreate, db: Session = Depends(get_db)):
     db_proje = db.query(models.Project).filter(models.Project.id == proje_id).first()
     if not db_proje:
@@ -69,6 +71,7 @@ def proje_guncelle(proje_id: int, proje: schemas.ProjectCreate, db: Session = De
 
 # 5. PROJE SİLME (DELETE)
 @app.delete("/projeler/{proje_id}")
+@app.delete("/projeler/{proje_id}/")
 def proje_sil(proje_id: int, db: Session = Depends(get_db)):
     db_proje = db.query(models.Project).filter(models.Project.id == proje_id).first()
     if not db_proje:
@@ -79,6 +82,7 @@ def proje_sil(proje_id: int, db: Session = Depends(get_db)):
     return {"message": "Proje silindi"}
 
 # 6. TÜM PROJELERİ SİLME (DELETE ALL)
+@app.delete("/projeler")
 @app.delete("/projeler/")
 def projeleri_sil(db: Session = Depends(get_db)):
     db.query(models.Project).delete()
@@ -86,10 +90,10 @@ def projeleri_sil(db: Session = Depends(get_db)):
     return {"message": "Tüm projeler silindi"}
 
 # --- MEDYA / ETKİNLİK ENDPOINT'LERİ ---
+@app.get("/media", response_model=list[schemas.Media])
 @app.get("/media/", response_model=list[schemas.Media])
 def medyala_listele(db: Session = Depends(get_db)):
     items = db.query(models.Media).all()
-    # Eğer veritabanı henüz boşsa varsayılan medyaları ekle
     if not items:
         default_items = [
             {
@@ -130,6 +134,7 @@ def medyala_listele(db: Session = Depends(get_db)):
         items = db.query(models.Media).all()
     return items
 
+@app.post("/media", response_model=schemas.Media)
 @app.post("/media/", response_model=schemas.Media)
 def medya_olustur(medya: schemas.MediaCreate, db: Session = Depends(get_db)):
     yeni_medya = models.Media(**medya.dict())
@@ -139,6 +144,7 @@ def medya_olustur(medya: schemas.MediaCreate, db: Session = Depends(get_db)):
     return yeni_medya
 
 @app.put("/media/{media_id}", response_model=schemas.Media)
+@app.put("/media/{media_id}/", response_model=schemas.Media)
 def medya_guncelle(media_id: int, medya: schemas.MediaCreate, db: Session = Depends(get_db)):
     db_medya = db.query(models.Media).filter(models.Media.id == media_id).first()
     if not db_medya:
@@ -150,6 +156,7 @@ def medya_guncelle(media_id: int, medya: schemas.MediaCreate, db: Session = Depe
     return db_medya
 
 @app.delete("/media/{media_id}")
+@app.delete("/media/{media_id}/")
 def medya_sil(media_id: int, db: Session = Depends(get_db)):
     db_medya = db.query(models.Media).filter(models.Media.id == media_id).first()
     if not db_medya:
@@ -158,13 +165,15 @@ def medya_sil(media_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Medya silindi"}
 
-@app.delete("/media/")
+@app.delete("/media", response_model=dict)
+@app.delete("/media/", response_model=dict)
 def tum_medyalari_sil(db: Session = Depends(get_db)):
     db.query(models.Media).delete()
     db.commit()
     return {"message": "Tüm medyalar silindi"}
 
 # 7. BAŞVURU EKLEME (POST)
+@app.post("/applications", response_model=schemas.Application)
 @app.post("/applications/", response_model=schemas.Application)
 def create_application(application: schemas.ApplicationCreate, db: Session = Depends(get_db)):
     db_application = models.Application(**application.dict())
@@ -174,6 +183,7 @@ def create_application(application: schemas.ApplicationCreate, db: Session = Dep
     return db_application
 
 # 8. BAŞVURULARI LİSTELEME (GET)
+@app.get("/applications", response_model=list[schemas.Application])
 @app.get("/applications/", response_model=list[schemas.Application])
 def list_applications(db: Session = Depends(get_db)):
     applications = db.query(models.Application).all()
@@ -181,6 +191,7 @@ def list_applications(db: Session = Depends(get_db)):
 
 # 8.5. BAŞVURU GÜNCELLEME (PUT - Admin Notu İçin)
 @app.put("/applications/{application_id}", response_model=schemas.Application)
+@app.put("/applications/{application_id}/", response_model=schemas.Application)
 def update_application(application_id: int, application_update: schemas.ApplicationUpdate, db: Session = Depends(get_db)):
     db_application = db.query(models.Application).filter(models.Application.id == application_id).first()
     if not db_application:
@@ -193,6 +204,7 @@ def update_application(application_id: int, application_update: schemas.Applicat
 
 # 9. BAŞVURU SİLME (DELETE)
 @app.delete("/applications/{application_id}")
+@app.delete("/applications/{application_id}/")
 def delete_application(application_id: int, db: Session = Depends(get_db)):
     db_application = db.query(models.Application).filter(models.Application.id == application_id).first()
     if not db_application:
@@ -203,8 +215,8 @@ def delete_application(application_id: int, db: Session = Depends(get_db)):
     return {"message": "Başvuru silindi"}
 
 # 10. TÜM BAŞVURULARI SİLME (DELETE ALL)
-# 10. TÜM BAŞVURULARI SİLME (DELETE ALL)
-@app.delete("/applications/")
+@app.delete("/applications", response_model=dict)
+@app.delete("/applications/", response_model=dict)
 def delete_all_applications(db: Session = Depends(get_db)):
     db.query(models.Application).delete()
     db.commit()

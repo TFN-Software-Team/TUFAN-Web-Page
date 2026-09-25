@@ -640,29 +640,47 @@ export default function AdminDashboard() {
 
   const handleSaveProject = async (e) => {
     e.preventDefault();
-    try {
-      const url = editingProject
-        ? `${API_BASE}/projeler/${editingProject.id}`
-        : `${API_BASE}/projeler/`;
-      const method = editingProject ? 'PUT' : 'POST';
+    const url = editingProject
+      ? `${API_BASE}/projeler/${editingProject.id}`
+      : `${API_BASE}/projeler/`;
+    const method = editingProject ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProject)
-      });
-      if (res.ok) {
-        setShowProjectModal(false);
-        setNewProject({ title: '', description: '' });
-        setEditingProject(null);
-        await fetchProjects();
-        updateLastModified('projects');
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        alert(`Hata oluştu (${res.status}): ${errData.detail || res.statusText || 'Proje kaydedilemedi'}`);
+    let attempts = 0;
+    let success = false;
+    let lastError = null;
+
+    while (attempts < 3 && !success) {
+      attempts++;
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newProject)
+        });
+
+        if (res.ok) {
+          success = true;
+          setShowProjectModal(false);
+          setNewProject({ title: '', description: '' });
+          setEditingProject(null);
+          await fetchProjects();
+          updateLastModified('projects');
+          return;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          alert(`Hata oluştu (${res.status}): ${errData.detail || res.statusText || 'Proje kaydedilemedi'}`);
+          return;
+        }
+      } catch (err) {
+        lastError = err;
+        if (attempts < 3) {
+          await new Promise(r => setTimeout(r, 1200));
+        }
       }
-    } catch (err) {
-      alert('Sunucu hatası: ' + (err.message || 'Veritabanı sunucusuna bağlanılamadı.'));
+    }
+
+    if (!success) {
+      alert('Sunucu hatası: ' + (lastError?.message || 'Veritabanı sunucusuna bağlanılamadı. Lütfen sunucunun uyanması için birkaç saniye sonra tekrar deneyin.'));
     }
   };
 
