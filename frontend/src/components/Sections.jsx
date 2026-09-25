@@ -198,11 +198,30 @@ export default function Sections({ onOpenAdminModal, lang }) {
       });
     }
 
-    // Projeler (from API)
+    // Projeler (from API + local fallback)
     fetch(`${API_BASE}/projeler/`)
       .then(res => res.json())
-      .then(data => setProjects(data))
-      .catch(err => console.error('Error fetching projects:', err));
+      .then(data => {
+        const apiProjects = Array.isArray(data) ? data : [];
+        try {
+          const localProjects = JSON.parse(localStorage.getItem('site_local_projects') || '[]');
+          const combined = [...apiProjects];
+          localProjects.forEach(lProj => {
+            const exists = combined.some(p => p.id === lProj.id || p.title === lProj.title);
+            if (!exists) combined.push(lProj);
+          });
+          setProjects(combined);
+        } catch (e) {
+          setProjects(apiProjects);
+        }
+      })
+      .catch(err => {
+        console.warn('Error fetching projects from API, using local storage fallback:', err);
+        try {
+          const localProjects = JSON.parse(localStorage.getItem('site_local_projects') || '[]');
+          if (localProjects.length > 0) setProjects(localProjects);
+        } catch (e) {}
+      });
 
   }, [lang]);
 
