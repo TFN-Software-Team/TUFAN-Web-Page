@@ -220,12 +220,22 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/media/`);
       if (res.ok) {
         const data = await res.json();
-        setMediaItems(data);
-        localStorage.setItem('site_media_items', JSON.stringify(data));
+        if (Array.isArray(data) && data.length > 0) {
+          setMediaItems(data);
+          localStorage.setItem('site_media_items', JSON.stringify(data));
+          return;
+        }
       }
     } catch (err) {
-      console.error('Error fetching media items from API:', err);
+      console.warn('API Error fetching media:', err);
     }
+    try {
+      const savedMedia = localStorage.getItem('site_media_items');
+      if (savedMedia) {
+        const parsed = JSON.parse(savedMedia);
+        if (parsed && parsed.length > 0) setMediaItems(parsed);
+      }
+    } catch (e) {}
   };
 
   useEffect(() => {
@@ -746,6 +756,26 @@ export default function AdminDashboard() {
 
   const handleSaveMedia = async (e) => {
     e.preventDefault();
+    const tempId = editingMedia ? editingMedia.id : Date.now();
+    const mediaData = {
+      id: tempId,
+      title: newMedia.title,
+      date: newMedia.date,
+      imageUrl: newMedia.imageUrl,
+      description: newMedia.description
+    };
+
+    // 1. Ekran ve yerel hafıza güncellemesi (Kullanıcıya %100 sorunsuz deneyim)
+    let updated;
+    if (editingMedia) {
+      updated = mediaItems.map(m => m.id === editingMedia.id ? mediaData : m);
+    } else {
+      updated = [...mediaItems, mediaData];
+    }
+    setMediaItems(updated);
+    localStorage.setItem('site_media_items', JSON.stringify(updated));
+
+    // 2. Arka planda sunucu API'sine kaydet
     try {
       const url = editingMedia
         ? `${API_BASE}/media/${editingMedia.id}`
@@ -757,56 +787,43 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newMedia)
       });
-
       if (res.ok) {
-        setShowMediaModal(false);
-        await fetchMediaItems();
-        updateLastModified('media');
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        alert(`Hata oluştu. (${res.status}): ${errData.detail || res.statusText}`);
+        fetchMediaItems();
       }
     } catch (err) {
-      console.error('API Error saving media:', err);
-      // Fallback: local state and localStorage if API fails
-      let updated;
-      if (editingMedia) {
-        updated = mediaItems.map(m => m.id === editingMedia.id ? { ...m, ...newMedia } : m);
-      } else {
-        updated = [...mediaItems, { id: Date.now(), ...newMedia }];
-      }
-      setMediaItems(updated);
-      localStorage.setItem('site_media_items', JSON.stringify(updated));
-      updateLastModified('media');
-      setShowMediaModal(false);
+      console.warn('API Error saving media, saved locally:', err);
     }
+
+    setShowMediaModal(false);
+    updateLastModified('media');
   };
 
   const handleDeleteMedia = (id) => {
     requestConfirm("Bu medyayı kalıcı olarak silmek istediğinize emin misiniz?", async () => {
-      try {
-        await fetch(`${API_BASE}/media/${id}`, { method: 'DELETE' });
-      } catch (err) {
-        console.error('API Error deleting media:', err);
-      }
       const updated = mediaItems.filter(m => m.id !== id);
       setMediaItems(updated);
       localStorage.setItem('site_media_items', JSON.stringify(updated));
       updateLastModified('media');
-      fetchMediaItems();
+
+      try {
+        await fetch(`${API_BASE}/media/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('API Error deleting media:', err);
+      }
     });
   };
 
   const handleDeleteAllMedia = () => {
     requestConfirm("Tüm medyaları kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", async () => {
-      try {
-        await fetch(`${API_BASE}/media/`, { method: 'DELETE' });
-      } catch (err) {
-        console.error('API Error deleting all media:', err);
-      }
       setMediaItems([]);
       localStorage.setItem('site_media_items', JSON.stringify([]));
       updateLastModified('media');
+
+      try {
+        await fetch(`${API_BASE}/media/`, { method: 'DELETE' });
+      } catch (err) {
+        console.warn('API Error deleting all media:', err);
+      }
     });
   };
 
