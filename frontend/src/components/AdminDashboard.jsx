@@ -204,26 +204,14 @@ export default function AdminDashboard() {
   };
 
   const fetchProjects = async () => {
-    let apiProjects = [];
     try {
       const res = await fetch(`${API_BASE}/projeler/`);
-      if (res.ok) apiProjects = await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data);
+      }
     } catch (err) {
-      console.warn('API Error fetching projects:', err);
-    }
-
-    try {
-      const localProjects = JSON.parse(localStorage.getItem('site_local_projects') || '[]');
-      const combined = [...apiProjects];
-      localProjects.forEach(lProj => {
-        const exists = combined.some(p => p.id === lProj.id || p.title === lProj.title);
-        if (!exists) {
-          combined.push(lProj);
-        }
-      });
-      setProjects(combined);
-    } catch (e) {
-      setProjects(apiProjects);
+      console.error('Error fetching projects from API:', err);
     }
   };
 
@@ -652,14 +640,6 @@ export default function AdminDashboard() {
 
   const handleSaveProject = async (e) => {
     e.preventDefault();
-    const tempId = editingProject ? editingProject.id : Date.now();
-    const projectData = {
-      id: tempId,
-      title: newProject.title,
-      description: newProject.description
-    };
-
-    let apiSuccess = false;
     try {
       const url = editingProject
         ? `${API_BASE}/projeler/${editingProject.id}`
@@ -672,69 +652,49 @@ export default function AdminDashboard() {
         body: JSON.stringify(newProject)
       });
       if (res.ok) {
-        apiSuccess = true;
+        setShowProjectModal(false);
+        setNewProject({ title: '', description: '' });
+        setEditingProject(null);
         await fetchProjects();
+        updateLastModified('projects');
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Hata oluştu (${res.status}): ${errData.detail || res.statusText || 'Proje kaydedilemedi'}`);
       }
     } catch (err) {
-      console.warn('API connection failed, saving project to local storage fallback:', err);
+      alert('Sunucu hatası: ' + (err.message || 'Veritabanı sunucusuna bağlanılamadı.'));
     }
-
-    if (!apiSuccess) {
-      // API başarısız veya erişilemez olduğunda kullanıcıyı ASLA engelleme, projeyi anında kaydet!
-      try {
-        const localProjects = JSON.parse(localStorage.getItem('site_local_projects') || '[]');
-        let updated;
-        if (editingProject) {
-          updated = localProjects.map(p => p.id === editingProject.id ? projectData : p);
-        } else {
-          updated = [...localProjects, projectData];
-        }
-        localStorage.setItem('site_local_projects', JSON.stringify(updated));
-
-        setProjects(prev => {
-          const exists = prev.some(p => p.id === projectData.id);
-          if (exists) return prev.map(p => p.id === projectData.id ? projectData : p);
-          return [...prev, projectData];
-        });
-      } catch (e) {
-        console.error('Error saving local project:', e);
-      }
-    }
-
-    setShowProjectModal(false);
-    setNewProject({ title: '', description: '' });
-    setEditingProject(null);
-    updateLastModified('projects');
   };
 
   const handleDeleteProject = (id) => {
     requestConfirm("Bu projeyi kalıcı olarak silmek istediğinize emin misiniz?", async () => {
       try {
-        await fetch(`${API_BASE}/projeler/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/projeler/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          await fetchProjects();
+          updateLastModified('projects');
+        } else {
+          alert('Proje silinirken hata oluştu.');
+        }
       } catch (err) {
-        console.warn('API Error deleting project:', err);
+        alert('Sunucu hatası: Proje silinemedi.');
       }
-      try {
-        const localProjects = JSON.parse(localStorage.getItem('site_local_projects') || '[]');
-        const updatedLocal = localProjects.filter(p => p.id !== id);
-        localStorage.setItem('site_local_projects', JSON.stringify(updatedLocal));
-      } catch (e) {}
-
-      setProjects(prev => prev.filter(p => p.id !== id));
-      updateLastModified('projects');
     });
   };
 
   const handleDeleteAllProjects = () => {
     requestConfirm("Tüm projeleri kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", async () => {
       try {
-        await fetch(`${API_BASE}/projeler/`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/projeler/`, { method: 'DELETE' });
+        if (res.ok) {
+          await fetchProjects();
+          updateLastModified('projects');
+        } else {
+          alert('Projeler silinirken hata oluştu.');
+        }
       } catch (err) {
-        console.warn('API Error deleting all projects:', err);
+        alert('Sunucu hatası: Projeler silinemedi.');
       }
-      localStorage.removeItem('site_local_projects');
-      setProjects([]);
-      updateLastModified('projects');
     });
   };
 
