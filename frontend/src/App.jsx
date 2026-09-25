@@ -7,6 +7,7 @@ import AdminDashboard from './components/AdminDashboard';
 export default function App() {
   const [activeModal, setActiveModal] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [lang, setLang] = useState('tr');
 
   const openAdminModal = () => setActiveModal('admin');
   const openApplicationModal = () => setActiveModal('application');
@@ -56,25 +57,28 @@ export default function App() {
   return (
     <>
       <div id="scroll-progress"></div>
-      <Navbar 
-        onOpenAdminModal={openAdminModal} 
+      <Navbar
+        onOpenAdminModal={openAdminModal}
         onOpenApplicationModal={openApplicationModal}
         isAdmin={isAdmin}
         onLogout={handleLogout}
+        lang={lang}
+        onLangChange={setLang}
       />
-      
+
       <main>
         {isAdmin ? (
           <AdminDashboard />
         ) : (
-          <Sections />
+          <Sections onOpenAdminModal={openAdminModal} lang={lang} />
         )}
       </main>
 
-      <Modals 
-        activeModal={activeModal} 
+      <Modals
+        activeModal={activeModal}
         onClose={closeModal}
         onLoginSuccess={handleLoginSuccess}
+        lang={lang}
       />
     </>
   );

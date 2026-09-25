@@ -364,6 +364,20 @@ a {
   100% { background-position: 0% 50%; }
 }
 
+.gradient-text-reverse {
+  background: linear-gradient(90deg, var(--tfn-blue), var(--tfn-orange), #ff9a44, var(--tfn-blue));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientAnimationReverse 8s ease infinite;
+}
+
+@keyframes gradientAnimationReverse {
+  0% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
@@ -545,6 +559,8 @@ a {
 /* Mobile-only actions bar (hamburger + theme toggle duplicate) */
 .mobile-actions {
   display: none;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* ---- Tablet (≤ 1024px) ---- */
@@ -636,3 +652,34 @@ a {
     padding: 1.25rem;
   }
 }
+
+/* ============================================
+   POLAROID PHOTO MARQUEE & INTERACTIVE CARDS
+   ============================================ */
+.media-marquee-track::-webkit-scrollbar {
+  display: none;
+}
+
+.polaroid-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.polaroid-card:hover {
+  transform: translateY(-8px) scale(1.05) rotate(0deg) !important;
+  box-shadow: 0 20px 35px -8px rgba(17, 57, 150, 0.25) !important;
+  border-color: var(--tfn-orange) !important;
+  z-index: 10;
+}
+
+.dark .polaroid-card {
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.7);
+}
+
+.dark .polaroid-card:hover {
+  box-shadow: 0 20px 35px -8px rgba(255, 100, 10, 0.3) !important;
+}
+
+.media-marquee-track.is-dragging .polaroid-card {
+  transition: none !important;
+}
+

@@ -5,7 +5,13 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# 1. BURAYI BİZ EKLEDİK: Modellerimizin olduğu dosyayı çağırıyoruz
+from dotenv import load_dotenv
+import os
+
+# 1. Çevresel değişkenleri (environment variables) sisteme yüklüyoruz
+load_dotenv()
+
+# 2. Modellerimizin olduğu Base sınıfını çağırıyoruz
 from app.models import Base
 
 config = context.config
@@ -13,8 +19,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 2. BURAYI DEĞİŞTİRDİK: None olan değeri kendi Base.metadata'mız ile güncelledik
+# 3. Alembic'e modellerimizi tanıtıyoruz
 target_metadata = Base.metadata
+
+# 4. DATABASE_URL'i güvenli bir şekilde .env dosyasından çekiyoruz
+database_url = os.getenv("DATABASE_URL")
+if not database_url:
+    raise ValueError("DATABASE_URL bulunamadı! Lütfen .env dosyanızı kontrol edin.")
+
+# 5. Çekilen URL'i Alembic konfigürasyonuna aktarıyoruz
+config.set_main_option("sqlalchemy.url", database_url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
