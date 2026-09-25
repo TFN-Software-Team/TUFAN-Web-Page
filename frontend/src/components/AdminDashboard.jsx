@@ -22,6 +22,8 @@ export default function AdminDashboard() {
 
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [editingMedia, setEditingMedia] = useState(null);
+  const [isSavingMedia, setIsSavingMedia] = useState(false);
+  const [mediaSaveStatus, setMediaSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
 
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
@@ -803,7 +805,7 @@ export default function AdminDashboard() {
       description: newMedia.description
     };
 
-    // 1. Ekran ve yerel hafıza güncellemesi (Kullanıcıya %100 sorunsuz deneyim)
+    // 1. Önce localStorage'a kaydet (anında görünsün)
     let updated;
     if (editingMedia) {
       updated = mediaItems.map(m => m.id === editingMedia.id ? mediaData : m);
@@ -812,31 +814,55 @@ export default function AdminDashboard() {
     }
     setMediaItems(updated);
     localStorage.setItem('site_media_items', JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('media-updated', { detail: updated }));
 
-    // 2. Arka planda sunucu API'sine kaydet
-    try {
+    // 2. API'ye kaydet — Render uyku modundaysa uyandırmak için 60 saniye bekle
+    setIsSavingMedia(true);
+    setMediaSaveStatus('saving');
+
+    const tryApiSave = async (attempt = 1) => {
       const url = editingMedia
-        ? `${API_BASE}/media/${editingMedia.id}`
+        ? `${API_BASE}/media/${editingMedia.id}/`
         : `${API_BASE}/media/`;
       const method = editingMedia ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newMedia)
-      });
-      if (res.ok) {
-        fetchMediaItems();
-      }
-    } catch (err) {
-      console.warn('API Error saving media, saved locally:', err);
-    }
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 65000); // 65sn — Render uyku süresi
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newMedia),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
 
-    // 3. Sections.jsx'in anlık güncellenmesi için olay tetikle
-    window.dispatchEvent(new CustomEvent('media-updated', { detail: updated }));
+        if (res.ok) {
+          setMediaSaveStatus('saved');
+          setTimeout(() => setMediaSaveStatus(null), 3000);
+          fetchMediaItems(); // ID'yi doğru değerle güncelle
+          return;
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch (err) {
+        if (attempt < 2) {
+          console.warn(`API deneme ${attempt} başarısız, tekrar deneniyor...`, err);
+          await new Promise(r => setTimeout(r, 5000));
+          return tryApiSave(attempt + 1);
+        } else {
+          console.error('API kaydı başarısız:', err);
+          setMediaSaveStatus('error');
+          setTimeout(() => setMediaSaveStatus(null), 5000);
+        }
+      }
+    };
 
     setShowMediaModal(false);
     updateLastModified('media');
+
+    // Modal kapatıldıktan sonra arka planda API'ye kaydet
+    tryApiSave().finally(() => setIsSavingMedia(false));
   };
 
   const handleDeleteMedia = (id) => {
@@ -845,15 +871,20 @@ export default function AdminDashboard() {
       setMediaItems(updated);
       localStorage.setItem('site_media_items', JSON.stringify(updated));
       updateLastModified('media');
-
-      // Sections.jsx'in anlık güncellenmesi için olay tetikle
       window.dispatchEvent(new CustomEvent('media-updated', { detail: updated }));
 
-      try {
-        await fetch(`${API_BASE}/media/${id}`, { method: 'DELETE' });
-      } catch (err) {
-        console.warn('API Error deleting media:', err);
-      }
+      const tryDelete = async (attempt = 1) => {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 65000);
+          await fetch(`${API_BASE}/media/${id}/`, { method: 'DELETE', signal: controller.signal });
+          clearTimeout(timeout);
+        } catch (err) {
+          if (attempt < 2) { await new Promise(r => setTimeout(r, 5000)); return tryDelete(2); }
+          console.warn('API delete media hata:', err);
+        }
+      };
+      tryDelete();
     });
   };
 
@@ -862,15 +893,20 @@ export default function AdminDashboard() {
       setMediaItems([]);
       localStorage.setItem('site_media_items', JSON.stringify([]));
       updateLastModified('media');
-
-      // Sections.jsx'in anlık güncellenmesi için olay tetikle
       window.dispatchEvent(new CustomEvent('media-updated', { detail: [] }));
 
-      try {
-        await fetch(`${API_BASE}/media/`, { method: 'DELETE' });
-      } catch (err) {
-        console.warn('API Error deleting all media:', err);
-      }
+      const tryDeleteAll = async (attempt = 1) => {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 65000);
+          await fetch(`${API_BASE}/media/`, { method: 'DELETE', signal: controller.signal });
+          clearTimeout(timeout);
+        } catch (err) {
+          if (attempt < 2) { await new Promise(r => setTimeout(r, 5000)); return tryDeleteAll(2); }
+          console.warn('API delete all media hata:', err);
+        }
+      };
+      tryDeleteAll();
     });
   };
 
@@ -943,6 +979,44 @@ export default function AdminDashboard() {
 
   return (
     <div className="container" style={{ marginTop: 'clamp(5rem, 10vw, 8rem)', minHeight: '80vh' }}>
+
+      {/* API KAYIT DURUMU BANNER */}
+      {mediaSaveStatus && (
+        <div style={{
+          position: 'fixed',
+          bottom: '1.5rem',
+          right: '1.5rem',
+          zIndex: 9999,
+          padding: '0.75rem 1.25rem',
+          borderRadius: '12px',
+          fontSize: '0.875rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          transition: 'all 0.3s ease',
+          ...(mediaSaveStatus === 'saving' ? {
+            backgroundColor: '#1e3a8a',
+            color: '#93c5fd',
+            border: '1px solid #2563eb'
+          } : mediaSaveStatus === 'saved' ? {
+            backgroundColor: '#14532d',
+            color: '#86efac',
+            border: '1px solid #16a34a'
+          } : {
+            backgroundColor: '#7f1d1d',
+            color: '#fca5a5',
+            border: '1px solid #dc2626'
+          })
+        }}>
+          {mediaSaveStatus === 'saving' && (
+            <><span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', border: '2px solid #93c5fd', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }}></span> Sunucuya kaydediliyor...</>
+          )}
+          {mediaSaveStatus === 'saved' && <>✅ Sunucuya kaydedildi — tüm cihazlarda görünür</>}
+          {mediaSaveStatus === 'error' && <>⚠️ Sunucuya kaydedilemedi — sadece bu cihazda görünür</>}
+        </div>
+      )}
 
       {/* CONFIRM MODAL */}
       <div className={`modal-overlay ${confirmModal.isOpen ? 'active' : ''}`} onClick={() => setConfirmModal({ isOpen: false, message: '', onConfirm: null })}>
