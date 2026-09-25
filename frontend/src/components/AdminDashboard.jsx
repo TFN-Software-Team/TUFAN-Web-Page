@@ -636,8 +636,11 @@ export default function AdminDashboard() {
         setShowProjectModal(false);
         fetchProjects();
         updateLastModified('projects');
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Hata oluştu. (${res.status}): ${errData.detail || res.statusText}`);
       }
-    } catch (err) { alert('Hata oluştu.'); }
+    } catch (err) { alert('Hata oluştu: ' + (err.message || 'Ağ hatası. CORS veya sunucu bağlantısı kontrol edilmeli.')); }
   };
 
   const handleDeleteProject = (id) => {
