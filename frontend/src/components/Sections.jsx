@@ -147,63 +147,13 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
       setFeatureCards(null);
     }
 
-    // Medya — API'den yükle, hata olursa localStorage'dan göster + Render uyandıktan sonra retry
-    const fetchMediaWithRetry = async (isRetry = false) => {
-      try {
-        const res = await fetch(`${API_BASE}/media/`, {
-          signal: AbortSignal.timeout(isRetry ? 15000 : 8000)
-        });
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setMediaItems(data);
-          localStorage.setItem('site_media_items', JSON.stringify(data));
-        }
-      } catch (err) {
-        if (!isRetry) {
-          // İlk deneme başarısız → localStorage'dan göster
-          console.warn('Backend yanıt vermedi, localStorage\'dan yükleniyor...');
-          try {
-            const savedMedia = localStorage.getItem('site_media_items');
-            if (savedMedia) {
-              const parsed = JSON.parse(savedMedia);
-              if (parsed && parsed.length > 0) setMediaItems(parsed);
-            }
-          } catch (e) {}
-
-          // Render backend'i uyandıktan sonra (35 saniye) tekrar dene
-          setTimeout(() => fetchMediaWithRetry(true), 35000);
-        } else {
-          console.warn('Backend retry da başarısız, localStorage\'dan devam ediliyor.');
-        }
-      }
-    };
-    fetchMediaWithRetry();
-
-    // Sosyal Medya
-    const savedSocial = localStorage.getItem('site_social_links');
-    if (savedSocial) {
-      try {
-        const parsed = JSON.parse(savedSocial);
-        if (parsed.instagram === 'https://instagram.com/tufan') {
-          parsed.instagram = 'https://www.instagram.com/tufanelektromobil?igsh=bW0zemZ0YW9tNXM2';
-        }
-        if (parsed.linkedin === 'https://linkedin.com/company/tufan') {
-          parsed.linkedin = 'https://www.linkedin.com/company/akdeniz-tufan-elektromobil/';
-        }
-        localStorage.setItem('site_social_links', JSON.stringify(parsed));
-        setSocialLinks(parsed);
-      } catch (e) {
-        setSocialLinks({
-          instagram: 'https://www.instagram.com/tufanelektromobil?igsh=bW0zemZ0YW9tNXM2',
-          linkedin: 'https://www.linkedin.com/company/akdeniz-tufan-elektromobil/'
-        });
-      }
-    } else {
-      setSocialLinks({
-        instagram: 'https://www.instagram.com/tufanelektromobil?igsh=bW0zemZ0YW9tNXM2',
-        linkedin: 'https://www.linkedin.com/company/akdeniz-tufan-elektromobil/'
-      });
-    }
+    // Medya (from DB API)
+    fetch(`${API_BASE}/media/`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setMediaItems(data);
+      })
+      .catch(err => console.error('Error fetching media from API:', err));
 
     // Projeler (from DB API)
     fetch(`${API_BASE}/projeler/`)
@@ -214,17 +164,6 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
       .catch(err => console.error('Error fetching projects from API:', err));
 
   }, [lang, mediaRefreshKey]);
-
-  // Admin panelinden medya değişikliği gelince anlık güncelleyen olay dinleyicisi
-  useEffect(() => {
-    const handleMediaUpdated = (e) => {
-      if (Array.isArray(e.detail)) {
-        setMediaItems(e.detail);
-      }
-    };
-    window.addEventListener('media-updated', handleMediaUpdated);
-    return () => window.removeEventListener('media-updated', handleMediaUpdated);
-  }, []);
 
   // Varsayılan değerler
   const displayHero1 = heroTitle1 || t.hero1Default;
