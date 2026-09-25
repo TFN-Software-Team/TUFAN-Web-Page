@@ -14,8 +14,8 @@ if (isLocalNetwork) {
     // Yerel ağdayken (bilgisayar, telefon, iPad vs.) sunucunun IP adresiyle bağlan:
     API_BASE = `http://${hostname}:8000`;
 } else {
-    // Site canlı ortama (Render / Vercel vs.) çıktığında canlı backend adresine bağlansın:
-    API_BASE = 'https://tufan-backend.onrender.com';
+    // Vercel Proxy (Rewrites) ile CORS engellerini sıfırlayan aynı domain altı API köprüsü:
+    API_BASE = '/api';
 }
 
 export default API_BASE;
