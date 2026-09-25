@@ -18,9 +18,10 @@ class Project(ProjectBase):
 
 # Medya ögeleri şeması
 class MediaBase(BaseModel):
-    title: str
+    title: str | None = None
     date: str | None = None
-    imageUrl: str
+    image_url: str | None = None
+    imageUrl: str | None = None
     description: str | None = None
 
 class MediaCreate(MediaBase):

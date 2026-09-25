@@ -9,12 +9,12 @@ class Project(Base):
     description = Column(String)
 
 class Media(Base):
-    __tablename__ = "media_items"
+    __tablename__ = "media"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
+    title = Column(String, index=True, nullable=True)
     date = Column(String, nullable=True)
-    imageUrl = Column(String)
+    image_url = Column(String, nullable=True)
     description = Column(String, nullable=True)
 
 class Application(Base):
