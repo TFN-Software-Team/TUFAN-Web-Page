@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Moon, Sun, LogOut, X } from 'lucide-react';
-import { translations } from '../translations';
+
 
 export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdmin, onLogout, lang, onLangChange }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const t = translations[lang];
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
-    
+
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (savedTheme === 'dark' || (!savedTheme && prefersDark) || document.documentElement.classList.contains('dark')) {
@@ -123,7 +122,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
                   <span style={{ fontWeight: '800', lineHeight: '1' }}>TUFAN</span>
                   {isAdmin && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.2rem' }}>ADMIN</span>}
                 </div>
-                {!isAdmin && <span style={{ fontSize: '0.65rem', fontWeight: '400', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t.brandSubtitle}</span>}
+                {!isAdmin && <span style={{ fontSize: '0.65rem', fontWeight: '400', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>ELEKTROMOBİL TAKIMI</span>}
               </div>
             </a>
           </div>
@@ -132,14 +131,14 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
           <div className="nav-links">
             {!isAdmin ? (
               <>
-                <a href="#about" className="nav-link">{t.navAbout}</a>
-                <a href="#projects" className="nav-link">{t.navProjects}</a>
-                <a href="#media" className="nav-link">{t.navMedia}</a>
-                <button onClick={onOpenApplicationModal} className="btn btn-primary">{t.navApply}</button>
+                <a href="#about" className="nav-link">Hakkımızda</a>
+                <a href="#projects" className="nav-link">Projelerimiz</a>
+                <a href="#media" className="nav-link">Medya & Basın</a>
+                <button onClick={onOpenApplicationModal} className="btn btn-primary">Takıma Katıl</button>
               </>
             ) : (
               <button onClick={onLogout} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <LogOut size={16} /> {t.navLogout}
+                <LogOut size={16} /> Çıkış Yap
               </button>
             )}
 
@@ -191,15 +190,15 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
 
         {!isAdmin ? (
           <>
-            <a href="#about" className="nav-mobile-link" onClick={closeMobile}>{t.navAbout}</a>
-            <a href="#projects" className="nav-mobile-link" onClick={closeMobile}>{t.navProjects}</a>
-            <a href="#media" className="nav-mobile-link" onClick={closeMobile}>{t.navMedia}</a>
+            <a href="#about" className="nav-mobile-link" onClick={closeMobile}>Hakkımızda</a>
+            <a href="#projects" className="nav-mobile-link" onClick={closeMobile}>Projelerimiz</a>
+            <a href="#media" className="nav-mobile-link" onClick={closeMobile}>Medya & Basın</a>
             <button
               onClick={() => { onOpenApplicationModal(); closeMobile(); }}
               className="btn btn-primary"
               style={{ fontSize: '1rem', padding: '0.85rem 2rem' }}
             >
-              {t.navApply}
+              Takıma Katıl
             </button>
 
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1rem' }}>
@@ -237,7 +236,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
               className="btn btn-outline"
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', padding: '0.85rem 2rem' }}
             >
-              <LogOut size={16} /> {t.navLogout}
+              <LogOut size={16} /> Çıkış Yap
             </button>
 
             <button

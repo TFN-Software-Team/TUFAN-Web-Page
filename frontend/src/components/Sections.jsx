@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Users, ShieldCheck, Cpu, Smartphone, Network, X, Calendar, Camera } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
-import { translations } from '../translations';
 import MediaMarquee from './MediaMarquee';
+
+const DEFAULT_FEATURE_CARDS = [
+  { id: 1, title: 'Disiplinler Arası Ekip Çalışması', description: 'Mühendislik, yazılım ve tasarım alanlarında yetkin öğrencilerle geleceğin araçlarını tasarlıyoruz.' },
+  { id: 2, title: 'Yerli ve Milli Üretim', description: 'Batarya yönetim sisteminden motor sürücüsüne kadar kritik bileşenleri yerli imkanlarla geliştiriyoruz.' },
+  { id: 3, title: 'Yarışma ve Performans', description: 'Teknofest ve Uluslararası Efficiency Challenge Elektrikli Araç Yarışlarında derece hedefiyle çalışıyoruz.' }
+];
 
 export default function Sections({ onOpenAdminModal, lang }) {
   const [siteText, setSiteText] = useState('');
@@ -14,8 +19,6 @@ export default function Sections({ onOpenAdminModal, lang }) {
   const [socialLinks, setSocialLinks] = useState({});
   const [featureCards, setFeatureCards] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
-
-  const t = translations[lang];
 
   useEffect(() => {
     // Hero Titles — admin tarafından özelleştirilebilir, yoksa dile göre default
@@ -30,7 +33,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
     if (savedFeatures) {
       setFeatureCards(JSON.parse(savedFeatures));
     } else {
-      setFeatureCards(null); // null = dile göre translations'dan al
+      setFeatureCards(null);
     }
 
     // Medya
@@ -42,7 +45,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
         setMediaItems(null);
       }
     } else {
-      setMediaItems(null); // null = dile göre translations'dan al
+      setMediaItems(null);
     }
 
     // Sosyal Medya
@@ -79,12 +82,12 @@ export default function Sections({ onOpenAdminModal, lang }) {
 
   }, []);
 
-  // Dile göre çözümlenen değerler
-  const displayHero1 = heroTitle1 || t.heroTitle1Default;
-  const displayHero2 = heroTitle2 || t.heroTitle2Default;
-  const displayAbout = siteText || t.aboutTextDefault;
-  const displayFeatureCards = featureCards || t.featureCards;
-  const displayMediaItems = mediaItems || t.mediaItems;
+  // Varsayılan değerler
+  const displayHero1 = heroTitle1 || 'Geleceğin Elektrikli Araç Teknolojileri';
+  const displayHero2 = heroTitle2 || 'TUFAN Elektromobil ile Yollarda.';
+  const displayAbout = siteText || 'TUFAN Elektromobil Takımı, Akdeniz Üniversitesi bünyesinde yerli ve milli elektrikli araç teknolojileri geliştirmek amacıyla kurulmuş disiplinler arası bir mühendislik takımıdır.';
+  const displayFeatureCards = featureCards || DEFAULT_FEATURE_CARDS;
+  const displayMediaItems = mediaItems || [];
 
   return (
     <div className="container" style={{ marginTop: '6rem' }}>
@@ -100,7 +103,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
           paddingBottom: '0.5rem',
           display: 'inline-block'
         }}>
-          TUFAN {t.brandSubtitle}
+          TUFAN ELEKTROMOBİL TAKIMI
         </span>
       </div>
 
@@ -145,11 +148,11 @@ export default function Sections({ onOpenAdminModal, lang }) {
       </section>
 
       <section id="projects" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
-        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>{t.projectsSectionTitle}</h2>
+        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>Projelerimiz</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {projects.length === 0 ? (
-            <p style={{ color: 'var(--text-secondary)' }}>{t.noProjectsMsg}</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Henüz eklenmiş bir proje bulunmamaktadır.</p>
           ) : (
             projects.map((project, index) => (
               <div key={project.id} className="premium-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', padding: 'clamp(1.25rem, 3vw, 3rem)' }}>
@@ -161,7 +164,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
                   <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '1rem', maxWidth: '600px' }}>
                     {project.description}
                   </p>
-                  <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>{t.projectDetailsBtn}</button>
+                  <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>Detayları İncele</button>
                 </div>
               </div>
             ))
@@ -171,15 +174,15 @@ export default function Sections({ onOpenAdminModal, lang }) {
 
       {/* Media & Archive Section */}
       <section id="media" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem', overflow: 'hidden' }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', color: 'var(--tfn-blue)' }}>{t.mediaSectionTitle}</h2>
+        <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', color: 'var(--tfn-blue)' }}>Medya & Etkinlikler</h2>
 
         {displayMediaItems.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)' }}>{t.noMediaMsg}</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Henüz medya öğesi bulunmamaktadır.</p>
         ) : (
           <MediaMarquee
             items={displayMediaItems}
             onSelectMedia={(item) => setSelectedMedia(item)}
-            dragHint={t.mediaDragHint}
+            dragHint="Sürükleyerek inceleyin"
           />
         )}
       </section>
@@ -252,7 +255,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
             </div>
 
             <button className="btn btn-outline" onClick={() => setSelectedMedia(null)} style={{ width: '100%' }}>
-              {t.close}
+              Kapat
             </button>
           </div>
         </div>
@@ -271,14 +274,14 @@ export default function Sections({ onOpenAdminModal, lang }) {
         </div>
 
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span>{t.footerRights}</span>
+          <span>© TUFAN Elektromobil Takımı. Tüm hakları saklıdır.</span>
           <button
             onClick={onOpenAdminModal}
             style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-secondary)', opacity: 0.15, cursor: 'pointer', fontSize: '0.8rem', transition: 'opacity 0.2s ease' }}
             onMouseEnter={(e) => e.target.style.opacity = 0.7}
             onMouseLeave={(e) => e.target.style.opacity = 0.15}
           >
-            {t.footerManage}
+            Yönetici Girişi
           </button>
         </div>
       </footer>
