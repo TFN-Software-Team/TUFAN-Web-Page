@@ -228,7 +228,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/media/`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setMediaItems(data);
           localStorage.setItem('site_media_items', JSON.stringify(data));
           return;
@@ -239,15 +239,14 @@ export default function AdminDashboard() {
     }
     try {
       const savedMedia = localStorage.getItem('site_media_items');
-      if (savedMedia) {
+      if (savedMedia !== null) {
         const parsed = JSON.parse(savedMedia);
-        if (parsed && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setMediaItems(parsed);
           return;
         }
       }
     } catch (e) {}
-    setMediaItems(DEFAULT_MEDIA_ITEMS);
   };
 
   useEffect(() => {
