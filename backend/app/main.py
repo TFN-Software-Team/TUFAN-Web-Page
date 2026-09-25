@@ -28,6 +28,11 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Explicit OPTIONS Preflight handler
+@app.options("/{full_path:path}")
+def options_handler(full_path: str):
+    return {}
 # --- CORS AYARLARI BİTİŞİ ---
 
 def get_db():
