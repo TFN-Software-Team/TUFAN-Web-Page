@@ -832,6 +832,9 @@ export default function AdminDashboard() {
       console.warn('API Error saving media, saved locally:', err);
     }
 
+    // 3. Sections.jsx'in anlık güncellenmesi için olay tetikle
+    window.dispatchEvent(new CustomEvent('media-updated', { detail: updated }));
+
     setShowMediaModal(false);
     updateLastModified('media');
   };
@@ -842,6 +845,9 @@ export default function AdminDashboard() {
       setMediaItems(updated);
       localStorage.setItem('site_media_items', JSON.stringify(updated));
       updateLastModified('media');
+
+      // Sections.jsx'in anlık güncellenmesi için olay tetikle
+      window.dispatchEvent(new CustomEvent('media-updated', { detail: updated }));
 
       try {
         await fetch(`${API_BASE}/media/${id}`, { method: 'DELETE' });
@@ -856,6 +862,9 @@ export default function AdminDashboard() {
       setMediaItems([]);
       localStorage.setItem('site_media_items', JSON.stringify([]));
       updateLastModified('media');
+
+      // Sections.jsx'in anlık güncellenmesi için olay tetikle
+      window.dispatchEvent(new CustomEvent('media-updated', { detail: [] }));
 
       try {
         await fetch(`${API_BASE}/media/`, { method: 'DELETE' });

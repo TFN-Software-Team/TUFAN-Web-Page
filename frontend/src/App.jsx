@@ -8,6 +8,7 @@ export default function App() {
   const [activeModal, setActiveModal] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [lang, setLang] = useState('tr');
+  const [mediaRefreshKey, setMediaRefreshKey] = useState(0);
 
   const openAdminModal = () => setActiveModal('admin');
   const openApplicationModal = () => setActiveModal('application');
@@ -20,6 +21,8 @@ export default function App() {
 
   const handleLogout = () => {
     setIsAdmin(false);
+    // Admin panelinden çıkışta medyayı yeniden yükle
+    setMediaRefreshKey(prev => prev + 1);
   };
 
   React.useEffect(() => {
@@ -70,7 +73,7 @@ export default function App() {
         {isAdmin ? (
           <AdminDashboard />
         ) : (
-          <Sections onOpenAdminModal={openAdminModal} lang={lang} />
+          <Sections onOpenAdminModal={openAdminModal} lang={lang} mediaRefreshKey={mediaRefreshKey} />
         )}
       </main>
 

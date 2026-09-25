@@ -92,7 +92,7 @@ const DEFAULT_MEDIA_ITEMS_TR = [
   }
 ];
 
-export default function Sections({ onOpenAdminModal, lang }) {
+export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }) {
   const [siteText, setSiteText] = useState('');
   const [heroTitle1, setHeroTitle1] = useState('');
   const [heroTitle2, setHeroTitle2] = useState('');
@@ -206,7 +206,18 @@ export default function Sections({ onOpenAdminModal, lang }) {
       })
       .catch(err => console.error('Error fetching projects from API:', err));
 
-  }, [lang]);
+  }, [lang, mediaRefreshKey]);
+
+  // Admin panelinden medya değişikliği gelince anlık güncelleyen olay dinleyicisi
+  useEffect(() => {
+    const handleMediaUpdated = (e) => {
+      if (Array.isArray(e.detail)) {
+        setMediaItems(e.detail);
+      }
+    };
+    window.addEventListener('media-updated', handleMediaUpdated);
+    return () => window.removeEventListener('media-updated', handleMediaUpdated);
+  }, []);
 
   // Varsayılan değerler
   const displayHero1 = heroTitle1 || t.hero1Default;
