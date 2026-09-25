@@ -7,6 +7,21 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
   const [isDark, setIsDark] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const t = {
+    about: lang === 'tr' ? 'Hakkımızda' : 'About Us',
+    projects: lang === 'tr' ? 'Projelerimiz' : 'Our Projects',
+    media: lang === 'tr' ? 'Medya & Basın' : 'Media & Press',
+    joinTeam: lang === 'tr' ? 'Takıma Katıl' : 'Join the Team',
+    logout: lang === 'tr' ? 'Çıkış Yap' : 'Sign Out',
+    toggleTheme: lang === 'tr' ? 'Tema Değiştir' : 'Toggle Theme',
+    toggleMenu: lang === 'tr' ? 'Menüyü aç/kapat' : 'Toggle menu',
+    adminPanel: lang === 'tr' ? 'Admin Paneli' : 'Admin Panel',
+    teamSubtitle: lang === 'tr' ? 'ELEKTROMOBİL TAKIMI' : 'ELECTRIC VEHICLE TEAM',
+    dark: lang === 'tr' ? 'KARANLIK' : 'DARK',
+    light: lang === 'tr' ? 'AÇIK' : 'LIGHT',
+    switchToEn: 'Switch to English',
+    switchToTr: "Türkçe'ye Geç",
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -72,7 +87,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
   const LangToggle = ({ mobile = false }) => (
     <button
       onClick={() => onLangChange(lang === 'tr' ? 'en' : 'tr')}
-      title={lang === 'tr' ? 'Switch to English' : "Türkçe'ye Geç"}
+      title={lang === 'tr' ? t.switchToEn : t.switchToTr}
       style={{
         background: 'none',
         border: '1px solid var(--border-color)',
@@ -122,7 +137,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
                   <span style={{ fontWeight: '800', lineHeight: '1' }}>TUFAN</span>
                   {isAdmin && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.2rem' }}>ADMIN</span>}
                 </div>
-                {!isAdmin && <span style={{ fontSize: '0.65rem', fontWeight: '400', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>ELEKTROMOBİL TAKIMI</span>}
+                {!isAdmin && <span style={{ fontSize: '0.65rem', fontWeight: '400', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t.teamSubtitle}</span>}
               </div>
             </a>
           </div>
@@ -131,18 +146,18 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
           <div className="nav-links">
             {!isAdmin ? (
               <>
-                <a href="#about" className="nav-link">Hakkımızda</a>
-                <a href="#projects" className="nav-link">Projelerimiz</a>
-                <a href="#media" className="nav-link">Medya & Basın</a>
-                <button onClick={onOpenApplicationModal} className="btn btn-primary">Takıma Katıl</button>
+                <a href="#about" className="nav-link">{t.about}</a>
+                <a href="#projects" className="nav-link">{t.projects}</a>
+                <a href="#media" className="nav-link">{t.media}</a>
+                <button onClick={onOpenApplicationModal} className="btn btn-primary">{t.joinTeam}</button>
               </>
             ) : (
               <button onClick={onLogout} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <LogOut size={16} /> Çıkış Yap
+                <LogOut size={16} /> {t.logout}
               </button>
             )}
 
-            <button onClick={toggleTheme} className="btn-icon" title="Tema Değiştir" style={{ marginLeft: '1rem' }}>
+            <button onClick={toggleTheme} className="btn-icon" title={t.toggleTheme} style={{ marginLeft: '1rem' }}>
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
@@ -159,7 +174,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
             <button
               onClick={toggleTheme}
               className="btn-icon"
-              title="Tema Değiştir"
+              title={t.toggleTheme}
               style={{ marginRight: '0.5rem', padding: '0.5rem', color: 'var(--text-primary)' }}
             >
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
@@ -167,7 +182,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
             <button
               className={`nav-hamburger ${mobileOpen ? 'open' : ''}`}
               onClick={() => setMobileOpen(v => !v)}
-              aria-label="Menüyü aç/kapat"
+              aria-label={t.toggleMenu}
             >
               <span />
               <span />
@@ -190,22 +205,22 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
 
         {!isAdmin ? (
           <>
-            <a href="#about" className="nav-mobile-link" onClick={closeMobile}>Hakkımızda</a>
-            <a href="#projects" className="nav-mobile-link" onClick={closeMobile}>Projelerimiz</a>
-            <a href="#media" className="nav-mobile-link" onClick={closeMobile}>Medya & Basın</a>
+            <a href="#about" className="nav-mobile-link" onClick={closeMobile}>{t.about}</a>
+            <a href="#projects" className="nav-mobile-link" onClick={closeMobile}>{t.projects}</a>
+            <a href="#media" className="nav-mobile-link" onClick={closeMobile}>{t.media}</a>
             <button
               onClick={() => { onOpenApplicationModal(); closeMobile(); }}
               className="btn btn-primary"
               style={{ fontSize: '1rem', padding: '0.85rem 2rem' }}
             >
-              Takıma Katıl
+              {t.joinTeam}
             </button>
 
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1rem' }}>
               <LangToggle mobile />
               <button
                 onClick={toggleTheme}
-                title="Tema Değiştir"
+                title={t.toggleTheme}
                 style={{
                   background: 'none',
                   border: '1px solid var(--border-color)',
@@ -224,24 +239,24 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
                 }}
               >
                 {isDark ? <Sun size={20} /> : <Moon size={20} />}
-                {lang === 'tr' ? (isDark ? 'AÇIK' : 'KARANLIK') : (isDark ? 'LIGHT' : 'DARK')}
+                {isDark ? t.light : t.dark}
               </button>
             </div>
           </>
         ) : (
           <>
-            <span style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>Admin Paneli</span>
+            <span style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>{t.adminPanel}</span>
             <button
               onClick={() => { onLogout(); closeMobile(); }}
               className="btn btn-outline"
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', padding: '0.85rem 2rem' }}
             >
-              <LogOut size={16} /> Çıkış Yap
+              <LogOut size={16} /> {t.logout}
             </button>
 
             <button
               onClick={toggleTheme}
-              title="Tema Değiştir"
+              title={t.toggleTheme}
               style={{
                 background: 'none',
                 border: '1px solid var(--border-color)',
@@ -261,7 +276,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
               }}
             >
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
-              {lang === 'tr' ? (isDark ? 'AÇIK' : 'KARANLIK') : (isDark ? 'LIGHT' : 'DARK')}
+              {isDark ? t.light : t.dark}
             </button>
           </>
         )}

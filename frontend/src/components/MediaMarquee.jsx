@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Camera, Calendar, ArrowRight } from 'lucide-react';
 
-export default function MediaMarquee({ items = [], onSelectMedia, dragHint = '← Sürükleyin veya İnceleyin →' }) {
+export default function MediaMarquee({ items = [], onSelectMedia, dragHint = '← Drag to explore →', lang = 'tr' }) {
   const containerRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -9,6 +9,8 @@ export default function MediaMarquee({ items = [], onSelectMedia, dragHint = '�
   const [dragDistance, setDragDistance] = useState(0);
   const isHoveredRef = useRef(false);
   const isDraggingRef = useRef(false);
+
+  const exploreLabel = lang === 'tr' ? 'İncele' : 'Explore';
 
   // Triple items for continuous infinite marquee wrapping
   const displayItems = [...items, ...items, ...items];
@@ -260,7 +262,7 @@ export default function MediaMarquee({ items = [], onSelectMedia, dragHint = '�
                   color: 'var(--tfn-blue)',
                   fontWeight: '600'
                 }}>
-                  <span>İncele</span>
+                  <span>{exploreLabel}</span>
                   <ArrowRight size={12} />
                 </div>
               </div>

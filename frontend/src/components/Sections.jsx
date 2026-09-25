@@ -4,13 +4,57 @@ import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
 import MediaMarquee from './MediaMarquee';
 
-const DEFAULT_FEATURE_CARDS = [
+const DEFAULT_FEATURE_CARDS_TR = [
   { id: 1, title: 'Disiplinler Arası Ekip Çalışması', description: 'Mühendislik, yazılım ve tasarım alanlarında yetkin öğrencilerle geleceğin araçlarını tasarlıyoruz.' },
   { id: 2, title: 'Yerli ve Milli Üretim', description: 'Batarya yönetim sisteminden motor sürücüsüne kadar kritik bileşenleri yerli imkanlarla geliştiriyoruz.' },
   { id: 3, title: 'Yarışma ve Performans', description: 'Teknofest ve Uluslararası Efficiency Challenge Elektrikli Araç Yarışlarında derece hedefiyle çalışıyoruz.' }
 ];
 
+const DEFAULT_FEATURE_CARDS_EN = [
+  { id: 1, title: 'Cross-Disciplinary Teamwork', description: 'We design the vehicles of the future alongside talented students in engineering, software, and design.' },
+  { id: 2, title: 'Domestic & National Production', description: 'From battery management systems to motor drivers, we develop critical components with local capabilities.' },
+  { id: 3, title: 'Competition & Performance', description: 'We compete with a podium goal at TEKNOFEST and the International Efficiency Challenge Electric Vehicle Races.' }
+];
+
 const DEFAULT_MEDIA_ITEMS = [
+  {
+    id: 1,
+    title: 'TEKNOFEST Hackathon 2025',
+    date: 'May 2025',
+    imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
+    description: 'As the TUFAN Electric Vehicle team, we were honored with first place at the TEKNOFEST 2025 Hackathon with our domestically developed battery management software and telemetry infrastructure.'
+  },
+  {
+    id: 2,
+    title: 'Electric Vehicle Chassis Test Event',
+    date: 'April 2025',
+    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+    description: 'We successfully completed our next-generation carbon fiber chassis tests. The aerodynamic drag coefficient and strength tests of our vehicle exceeded the targeted standards.'
+  },
+  {
+    id: 3,
+    title: 'Corporate Sponsorship Summit',
+    date: 'March 2025',
+    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
+    description: 'A gala event where we gathered with our industry partners and main sponsors to introduce the TUFAN Electric Vehicle vision and our new vehicle concept.'
+  },
+  {
+    id: 4,
+    title: 'Autonomous Driving Workshop',
+    date: 'February 2025',
+    imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
+    description: 'During a 3-day campus workshop organized by our AI and computer vision team, in-vehicle image processing and lane-following systems were tested live.'
+  },
+  {
+    id: 5,
+    title: 'Domestic Innovation Exhibition',
+    date: 'January 2025',
+    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+    description: 'We presented our self-developed high-efficiency motor driver cards and on-board charging units to students and academics at our university\'s innovation exhibition.'
+  }
+];
+
+const DEFAULT_MEDIA_ITEMS_TR = [
   {
     id: 1,
     title: 'TEKNOFEST Hackathon 2025',
@@ -61,11 +105,31 @@ export default function Sections({ onOpenAdminModal, lang }) {
         if (parsed && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return DEFAULT_MEDIA_ITEMS;
+    return DEFAULT_MEDIA_ITEMS_TR;
   });
   const [socialLinks, setSocialLinks] = useState({});
   const [featureCards, setFeatureCards] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
+
+  const t = {
+    teamLabel: lang === 'tr' ? 'TUFAN ELEKTROMOBİL TAKIMI' : 'TUFAN ELECTRIC VEHICLE TEAM',
+    hero1Default: lang === 'tr' ? 'Geleceğin Elektrikli Araç Teknolojileri' : 'Electric Vehicle Technologies of the Future',
+    hero2Default: lang === 'tr' ? 'TUFAN Elektromobil ile Yollarda.' : 'On the Road with TUFAN Electric.',
+    aboutDefault: lang === 'tr'
+      ? 'TUFAN Elektromobil Takımı, Akdeniz Üniversitesi bünyesinde yerli ve milli elektrikli araç teknolojileri geliştirmek amacıyla kurulmuş disiplinler arası bir mühendislik takımıdır.'
+      : 'TUFAN Electric Vehicle Team is an interdisciplinary engineering team founded at Akdeniz University with the aim of developing domestic and national electric vehicle technologies.',
+    projectsTitle: lang === 'tr' ? 'Projelerimiz' : 'Our Projects',
+    noProjects: lang === 'tr' ? 'Henüz eklenmiş bir proje bulunmamaktadır.' : 'No projects have been added yet.',
+    viewDetails: lang === 'tr' ? 'Detayları İncele' : 'View Details',
+    mediaTitle: lang === 'tr' ? 'Medya & Etkinlikler' : 'Media & Events',
+    noMedia: lang === 'tr' ? 'Henüz medya öğesi bulunmamaktadır.' : 'No media items available yet.',
+    dragHint: lang === 'tr' ? 'Sürükleyerek inceleyin' : 'Drag to explore',
+    noDescription: lang === 'tr' ? 'Bu etkinlik hakkında henüz ayrıntılı bir açıklama eklenmemiş.' : 'No detailed description has been added for this event yet.',
+    close: lang === 'tr' ? 'Kapat' : 'Close',
+    rights: lang === 'tr' ? '© TUFAN Elektromobil Takımı. Tüm hakları saklıdır.' : '© TUFAN Electric Vehicle Team. All rights reserved.',
+    adminLogin: lang === 'tr' ? 'Yönetici Girişi' : 'Admin Login',
+    explore: lang === 'tr' ? 'İncele' : 'Explore',
+  };
 
   useEffect(() => {
     // Hero Titles — admin tarafından özelleştirilebilir, yoksa dile göre default
@@ -89,12 +153,12 @@ export default function Sections({ onOpenAdminModal, lang }) {
       if (savedMedia) {
         const parsed = JSON.parse(savedMedia);
         if (parsed && parsed.length > 0) setMediaItems(parsed);
-        else setMediaItems(DEFAULT_MEDIA_ITEMS);
+        else setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
       } else {
-        setMediaItems(DEFAULT_MEDIA_ITEMS);
+        setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
       }
     } catch (e) {
-      setMediaItems(DEFAULT_MEDIA_ITEMS);
+      setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
     }
 
     // Sosyal Medya
@@ -129,14 +193,16 @@ export default function Sections({ onOpenAdminModal, lang }) {
       .then(data => setProjects(data))
       .catch(err => console.error('Error fetching projects:', err));
 
-  }, []);
+  }, [lang]);
 
   // Varsayılan değerler
-  const displayHero1 = heroTitle1 || 'Geleceğin Elektrikli Araç Teknolojileri';
-  const displayHero2 = heroTitle2 || 'TUFAN Elektromobil ile Yollarda.';
-  const displayAbout = siteText || 'TUFAN Elektromobil Takımı, Akdeniz Üniversitesi bünyesinde yerli ve milli elektrikli araç teknolojileri geliştirmek amacıyla kurulmuş disiplinler arası bir mühendislik takımıdır.';
-  const displayFeatureCards = featureCards || DEFAULT_FEATURE_CARDS;
-  const displayMediaItems = (mediaItems && mediaItems.length > 0) ? mediaItems : DEFAULT_MEDIA_ITEMS;
+  const displayHero1 = heroTitle1 || t.hero1Default;
+  const displayHero2 = heroTitle2 || t.hero2Default;
+  const displayAbout = siteText || t.aboutDefault;
+  const defaultFeatureCards = lang === 'tr' ? DEFAULT_FEATURE_CARDS_TR : DEFAULT_FEATURE_CARDS_EN;
+  const displayFeatureCards = featureCards || defaultFeatureCards;
+  const defaultMediaItems = lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS;
+  const displayMediaItems = (mediaItems && mediaItems.length > 0) ? mediaItems : defaultMediaItems;
 
   return (
     <div className="container" style={{ marginTop: '6rem' }}>
@@ -152,7 +218,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
           paddingBottom: '0.5rem',
           display: 'inline-block'
         }}>
-          TUFAN ELEKTROMOBİL TAKIMI
+          {t.teamLabel}
         </span>
       </div>
 
@@ -197,11 +263,11 @@ export default function Sections({ onOpenAdminModal, lang }) {
       </section>
 
       <section id="projects" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
-        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>Projelerimiz</h2>
+        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>{t.projectsTitle}</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {projects.length === 0 ? (
-            <p style={{ color: 'var(--text-secondary)' }}>Henüz eklenmiş bir proje bulunmamaktadır.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>{t.noProjects}</p>
           ) : (
             projects.map((project, index) => (
               <div key={project.id} className="premium-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', padding: 'clamp(1.25rem, 3vw, 3rem)' }}>
@@ -213,7 +279,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
                   <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '1rem', maxWidth: '600px' }}>
                     {project.description}
                   </p>
-                  <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>Detayları İncele</button>
+                  <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>{t.viewDetails}</button>
                 </div>
               </div>
             ))
@@ -223,15 +289,16 @@ export default function Sections({ onOpenAdminModal, lang }) {
 
       {/* Media & Archive Section */}
       <section id="media" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem', overflow: 'hidden' }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', color: 'var(--tfn-blue)' }}>Medya & Etkinlikler</h2>
+        <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', color: 'var(--tfn-blue)' }}>{t.mediaTitle}</h2>
 
         {displayMediaItems.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)' }}>Henüz medya öğesi bulunmamaktadır.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>{t.noMedia}</p>
         ) : (
           <MediaMarquee
             items={displayMediaItems}
             onSelectMedia={(item) => setSelectedMedia(item)}
-            dragHint="Sürükleyerek inceleyin"
+            dragHint={t.dragHint}
+            lang={lang}
           />
         )}
       </section>
@@ -270,7 +337,7 @@ export default function Sections({ onOpenAdminModal, lang }) {
               ) : (
                 <div style={{ padding: '3rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                   <Camera size={48} />
-                  <span>TUFAN Elektromobil</span>
+                  <span>TUFAN {lang === 'tr' ? 'Elektromobil' : 'Electric'}</span>
                 </div>
               )}
             </div>
@@ -300,11 +367,11 @@ export default function Sections({ onOpenAdminModal, lang }) {
 
             {/* Event Description */}
             <div style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: '1.7', whiteSpace: 'pre-wrap', marginBottom: '2rem' }}>
-              {selectedMedia.description || 'Bu etkinlik hakkında henüz ayrıntılı bir açıklama eklenmemiş.'}
+              {selectedMedia.description || t.noDescription}
             </div>
 
             <button className="btn btn-outline" onClick={() => setSelectedMedia(null)} style={{ width: '100%' }}>
-              Kapat
+              {t.close}
             </button>
           </div>
         </div>
@@ -323,18 +390,17 @@ export default function Sections({ onOpenAdminModal, lang }) {
         </div>
 
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span>© TUFAN Elektromobil Takımı. Tüm hakları saklıdır.</span>
+          <span>{t.rights}</span>
           <button
             onClick={onOpenAdminModal}
             style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-secondary)', opacity: 0.15, cursor: 'pointer', fontSize: '0.8rem', transition: 'opacity 0.2s ease' }}
             onMouseEnter={(e) => e.target.style.opacity = 0.7}
             onMouseLeave={(e) => e.target.style.opacity = 0.15}
           >
-            Yönetici Girişi
+            {t.adminLogin}
           </button>
         </div>
       </footer>
     </div>
   );
 }
-
