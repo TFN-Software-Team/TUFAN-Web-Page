@@ -22,4 +22,3 @@ class Application(Base):
     reason = Column(String)
     about_me = Column(String)
     admin_note = Column(String, nullable=True)
-    team = Column(String, nullable=True)
