@@ -21,23 +21,12 @@ app = FastAPI(title="TUFAN Web API")
 from fastapi.middleware.cors import CORSMiddleware
 
 # --- CORS AYARLARI BAŞLANGICI ---
-origins = [
-    "https://tufanelektromobil.com",         # Ana üretim domain'i
-    "https://www.tufanelektromobil.com",     # www üretim domain'i
-    "http://tufanelektromobil.com",          # HTTP versiyonu
-    "http://www.tufanelektromobil.com",      # HTTP www versiyonu
-    "https://tufanelektromobil.vercel.app",  # Vercel production
-    "https://tufan-web-page.vercel.app",     # Vercel alternatif URL
-    "http://localhost:5173",                 # Lokal geliştirme (Vite)
-    "http://localhost:3000",                 # Lokal geliştirme (alternatif)
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 # --- CORS AYARLARI BİTİŞİ ---
 
