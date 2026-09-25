@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Sections from './components/Sections';
 import Modals from './components/Modals';
 import AdminDashboard from './components/AdminDashboard';
+import API_BASE from './config';
 
 export default function App() {
   const [activeModal, setActiveModal] = useState(null);
@@ -24,6 +25,19 @@ export default function App() {
     // Admin panelinden çıkışta medyayı yeniden yükle
     setMediaRefreshKey(prev => prev + 1);
   };
+
+  // Render.com'daki backend uyku modundaysa uyandır
+  useEffect(() => {
+    const wakeUpBackend = async () => {
+      try {
+        // Sessizce arka planda backend'e ping at
+        await fetch(`${API_BASE}/media/`, { signal: AbortSignal.timeout(30000) });
+      } catch (e) {
+        // Sessizce devam et - sadece uyandırmak için
+      }
+    };
+    wakeUpBackend();
+  }, []);
 
   React.useEffect(() => {
     const handleScroll = () => {

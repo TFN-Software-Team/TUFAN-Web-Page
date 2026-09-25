@@ -15,7 +15,7 @@ with engine.connect() as conn:
     except Exception:
         pass
 
-app = FastAPI(title="TUFAN Web API", redirect_slashes=False)
+app = FastAPI(title="TUFAN Web API")
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,6 +28,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # --- CORS AYARLARI BİTİŞİ ---
+
+# Health check endpoint — Cron job ve uptime monitor için
+@app.get("/health")
+@app.get("/health/")
+def health_check():
+    return {"status": "ok"}
 
 def get_db():
     db = SessionLocal()

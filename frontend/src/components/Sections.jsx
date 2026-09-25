@@ -147,30 +147,37 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
       setFeatureCards(null);
     }
 
-    // Medya — API'den ve fallback olarak localStorage'dan yukle
-    fetch(`${API_BASE}/media/`)
-      .then(res => res.json())
-      .then(data => {
+    // Medya — API'den yükle, hata olursa localStorage'dan göster + Render uyandıktan sonra retry
+    const fetchMediaWithRetry = async (isRetry = false) => {
+      try {
+        const res = await fetch(`${API_BASE}/media/`, {
+          signal: AbortSignal.timeout(isRetry ? 15000 : 8000)
+        });
+        const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setMediaItems(data);
           localStorage.setItem('site_media_items', JSON.stringify(data));
         }
-      })
-      .catch(err => {
-        console.error('Error fetching media from API:', err);
-        try {
-          const savedMedia = localStorage.getItem('site_media_items');
-          if (savedMedia) {
-            const parsed = JSON.parse(savedMedia);
-            if (parsed && parsed.length > 0) setMediaItems(parsed);
-            else setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
-          } else {
-            setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
-          }
-        } catch (e) {
-          setMediaItems(lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS);
+      } catch (err) {
+        if (!isRetry) {
+          // İlk deneme başarısız → localStorage'dan göster
+          console.warn('Backend yanıt vermedi, localStorage\'dan yükleniyor...');
+          try {
+            const savedMedia = localStorage.getItem('site_media_items');
+            if (savedMedia) {
+              const parsed = JSON.parse(savedMedia);
+              if (parsed && parsed.length > 0) setMediaItems(parsed);
+            }
+          } catch (e) {}
+
+          // Render backend'i uyandıktan sonra (35 saniye) tekrar dene
+          setTimeout(() => fetchMediaWithRetry(true), 35000);
+        } else {
+          console.warn('Backend retry da başarısız, localStorage\'dan devam ediliyor.');
         }
-      });
+      }
+    };
+    fetchMediaWithRetry();
 
     // Sosyal Medya
     const savedSocial = localStorage.getItem('site_social_links');
