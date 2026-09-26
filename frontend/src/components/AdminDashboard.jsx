@@ -69,13 +69,7 @@ export default function AdminDashboard() {
     }
   ];
 
-  const [mediaItems, setMediaItems] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('site_media_items'));
-      if (Array.isArray(saved) && saved.length > 0) return saved;
-    } catch (e) {}
-    return DEFAULT_MEDIA_ITEMS;
-  });
+  const [mediaItems, setMediaItems] = useState([]);
   const [socialLinks, setSocialLinks] = useState(() => {
     try {
       const saved = localStorage.getItem('site_social_links');

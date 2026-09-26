@@ -97,16 +97,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
   const [heroTitle1, setHeroTitle1] = useState('');
   const [heroTitle2, setHeroTitle2] = useState('');
   const [projects, setProjects] = useState([]);
-  const [mediaItems, setMediaItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('site_media_items');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-    return DEFAULT_MEDIA_ITEMS_TR;
-  });
+  const [mediaItems, setMediaItems] = useState([]);
   const [socialLinks, setSocialLinks] = useState({});
   const [featureCards, setFeatureCards] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
@@ -171,8 +162,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
   const displayAbout = siteText || t.aboutDefault;
   const defaultFeatureCards = lang === 'tr' ? DEFAULT_FEATURE_CARDS_TR : DEFAULT_FEATURE_CARDS_EN;
   const displayFeatureCards = featureCards || defaultFeatureCards;
-  const defaultMediaItems = lang === 'tr' ? DEFAULT_MEDIA_ITEMS_TR : DEFAULT_MEDIA_ITEMS;
-  const displayMediaItems = (mediaItems && mediaItems.length > 0) ? mediaItems : defaultMediaItems;
+  const displayMediaItems = mediaItems;
 
   return (
     <div className="container" style={{ marginTop: '6rem' }}>
