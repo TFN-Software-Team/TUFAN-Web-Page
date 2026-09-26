@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
   // LocalStorage States
-  const [aboutText, setAboutText] = useState(() => localStorage.getItem('site_about_text') || 'TUFAN, teknoloji ve verimliliği merkeze alan kurumsal bir öğrenci ağıdır...');
+  const [aboutText, setAboutText] = useState(() => localStorage.getItem('site_about_text') || 'TUFAN Elektromobil Takımı, Akdeniz Üniversitesi bünyesinde yerli ve milli elektrikli araç teknolojileri geliştirmek amacıyla kurulmuş disiplinler arası bir mühendislik takımıdır.');
   const [heroTitle1, setHeroTitle1] = useState(() => localStorage.getItem('site_hero_title1') || 'Dijital Çözümler.');
   const [heroTitle2, setHeroTitle2] = useState(() => localStorage.getItem('site_hero_title2') || 'Maksimum Etki.');
   const DEFAULT_MEDIA_ITEMS = [
