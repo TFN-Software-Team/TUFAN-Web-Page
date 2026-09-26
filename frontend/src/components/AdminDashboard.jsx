@@ -29,8 +29,8 @@ export default function AdminDashboard() {
 
   // LocalStorage States
   const [aboutText, setAboutText] = useState(() => localStorage.getItem('site_about_text') || 'TUFAN Elektromobil Takımı, Akdeniz Üniversitesi bünyesinde yerli ve milli elektrikli araç teknolojileri geliştirmek amacıyla kurulmuş disiplinler arası bir mühendislik takımıdır.');
-  const [heroTitle1, setHeroTitle1] = useState(() => localStorage.getItem('site_hero_title1') || 'Dijital Çözümler.');
-  const [heroTitle2, setHeroTitle2] = useState(() => localStorage.getItem('site_hero_title2') || 'Maksimum Etki.');
+  const [heroTitle1, setHeroTitle1] = useState(() => localStorage.getItem('site_hero_title1') || 'Geleceğin Elektrikli Araç Teknolojileri');
+  const [heroTitle2, setHeroTitle2] = useState(() => localStorage.getItem('site_hero_title2') || 'TUFAN Elektromobil ile Yollarda.');
   const DEFAULT_MEDIA_ITEMS = [
     {
       id: 1,
