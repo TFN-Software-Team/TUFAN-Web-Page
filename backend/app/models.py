@@ -28,6 +28,7 @@ class Application(Base):
     faculty = Column(String)
     department = Column(String)
     student_class = Column(String)
+    team = Column(String, nullable=True)
     reason = Column(String)
     about_me = Column(String)
     admin_note = Column(String, nullable=True)

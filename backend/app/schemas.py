@@ -43,6 +43,7 @@ class ApplicationBase(BaseModel):
     faculty: str
     department: str
     student_class: str
+    team: Optional[str] = None
     reason: str
     about_me: str
     admin_note: Optional[str] = None

@@ -197,8 +197,12 @@ export default function AdminDashboard() {
       const combined = [...apiApps];
       
       localApps.forEach(lApp => {
-        const exists = combined.some(a => a.id === lApp.id || (a.email === lApp.email && a.phone === lApp.phone));
-        if (!exists) {
+        const existingApp = combined.find(a => a.id === lApp.id || (a.email === lApp.email && a.phone === lApp.phone));
+        if (existingApp) {
+          if (!existingApp.team && lApp.team) {
+            existingApp.team = lApp.team;
+          }
+        } else {
           combined.push(lApp);
         }
       });
@@ -1485,7 +1489,7 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ padding: '2rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
                   <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Başvurulan Ekip</h4>
-                  <p style={{ color: 'var(--tfn-blue)', fontWeight: '700', fontSize: '1.2rem' }}>{selectedApplication.team || 'Belirtilmedi'}</p>
+                  <p style={{ color: '#ff640a', fontWeight: '700', fontSize: '1.2rem' }}>{selectedApplication.team || 'Belirtilmedi'}</p>
                 </div>
                 <div style={{ padding: '2rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
                   <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>Neden TUFAN'ı Seçtin?</h4>
@@ -1613,7 +1617,7 @@ export default function AdminDashboard() {
                           <tr key={app.id} onClick={() => handleSelectApplication(app)} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s ease', cursor: 'pointer' }} className="hover:bg-gray-50">
                             <td style={{ padding: '1rem' }}>#{app.id}</td>
                             <td style={{ padding: '1rem', fontWeight: '500' }}>{app.first_name} {app.last_name}</td>
-                            <td style={{ padding: '1rem' }}><span style={{ padding: '0.3rem 0.6rem', backgroundColor: 'rgba(17, 57, 150, 0.1)', color: 'var(--tfn-blue)', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>{app.team || '-'}</span></td>
+                            <td style={{ padding: '1rem' }}><span style={{ padding: '0.3rem 0.6rem', backgroundColor: 'rgba(255, 100, 10, 0.15)', color: '#ff640a', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600' }}>{app.team || '-'}</span></td>
                             <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.department}</td>
                             <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{app.email}</td>
                             <td style={{ padding: '1rem', textAlign: 'right' }}>

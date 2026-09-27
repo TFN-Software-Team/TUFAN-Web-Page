@@ -7,10 +7,15 @@ from .database import SessionLocal, engine
 # Veritabanı tablolarını otomatik oluştur
 models.Base.metadata.create_all(bind=engine)
 
-# Mevcut tabloya 'admin_note' sütununu otomatik ekleme (Migration yerine basit çözüm)
+# Mevcut tabloya 'admin_note' ve 'team' sütunlarını otomatik ekleme (Migration yerine basit çözüm)
 with engine.connect() as conn:
     try:
         conn.execute(text("ALTER TABLE applications ADD COLUMN admin_note VARCHAR;"))
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE applications ADD COLUMN team VARCHAR;"))
         conn.commit()
     except Exception:
         pass
