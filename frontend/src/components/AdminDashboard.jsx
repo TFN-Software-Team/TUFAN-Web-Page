@@ -158,7 +158,7 @@ export default function AdminDashboard() {
     setShowFeatureModal(true);
   };
 
-  const handleSaveFeature = (e) => {
+  const handleSaveFeature = async (e) => {
     e.preventDefault();
     let updated;
     if (editingFeature) {
@@ -168,15 +168,17 @@ export default function AdminDashboard() {
     }
     setFeatureCards(updated);
     localStorage.setItem('site_feature_cards', JSON.stringify(updated));
+    await saveSettingToApi('site_feature_cards', JSON.stringify(updated));
     updateLastModified('features');
     setShowFeatureModal(false);
   };
 
   const handleDeleteFeature = (id) => {
-    requestConfirm('Özellik kartını silmek istediğinize emin misiniz?', () => {
+    requestConfirm('Özellik kartını silmek istediğinize emin misiniz?', async () => {
       const updated = featureCards.filter(f => f.id !== id);
       setFeatureCards(updated);
       localStorage.setItem('site_feature_cards', JSON.stringify(updated));
+      await saveSettingToApi('site_feature_cards', JSON.stringify(updated));
       updateLastModified('features');
     });
   };
@@ -243,6 +245,7 @@ export default function AdminDashboard() {
         if (settingsMap.site_about_text) setAboutText(settingsMap.site_about_text);
         if (settingsMap.site_hero_title1) setHeroTitle1(settingsMap.site_hero_title1);
         if (settingsMap.site_hero_title2) setHeroTitle2(settingsMap.site_hero_title2);
+        if (settingsMap.site_feature_cards) setFeatureCards(JSON.parse(settingsMap.site_feature_cards));
       }
     } catch (err) {
       console.error('Error fetching settings:', err);

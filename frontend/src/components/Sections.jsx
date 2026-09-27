@@ -140,6 +140,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
           if (settingsMap.site_about_text) setSiteText(settingsMap.site_about_text);
           if (settingsMap.site_hero_title1) setHeroTitle1(settingsMap.site_hero_title1);
           if (settingsMap.site_hero_title2) setHeroTitle2(settingsMap.site_hero_title2);
+          if (settingsMap.site_feature_cards) setFeatureCards(JSON.parse(settingsMap.site_feature_cards));
         }
       })
       .catch(err => console.error('Error fetching settings from API:', err));
