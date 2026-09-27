@@ -54,7 +54,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
     // Validation errors
     errFirstName: lang === 'tr' ? 'Lütfen adınızı giriniz.' : 'Please enter your first name.',
     errLastName: lang === 'tr' ? 'Lütfen soyadınızı giriniz.' : 'Please enter your last name.',
-    errPhone11: lang === 'tr' ? 'Telefon numarası 11 haneli olmalıdır (05XX...)' : 'Phone number must be 11 digits (05XX...)',
+    errPhone11: lang === 'tr' ? 'Telefon numarası 11 haneli olmalıdır (0 (5XX)...)' : 'Phone number must be 11 digits (0 (5XX)...)',
     errPhone05: lang === 'tr' ? 'Telefon numarası 05 ile başlamalıdır' : 'Phone number must start with 05',
     errEmail: lang === 'tr' ? 'Geçerli bir e-posta adresi giriniz.' : 'Please enter a valid email address.',
     errFaculty: lang === 'tr' ? 'Fakülte alanı gereklidir.' : 'Faculty field is required.',
@@ -107,15 +107,26 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
     if (errors[name]) setErrors({ ...errors, [name]: '' });
   };
 
-  // Phone mask: (05XX) XXX XX XX
+  // Phone mask: 0 (5XX) XXX XX XX
   const formatPhone = (raw) => {
     const digits = raw.replace(/\D/g, '');
-    let result = '';
-    if (digits.length > 0) result += '(' + digits.substring(0, Math.min(4, digits.length));
-    if (digits.length >= 4) result += ') ';
-    if (digits.length > 4) result += digits.substring(4, Math.min(7, digits.length));
-    if (digits.length > 7) result += ' ' + digits.substring(7, Math.min(9, digits.length));
-    if (digits.length > 9) result += ' ' + digits.substring(9, Math.min(11, digits.length));
+    if (!digits) return '';
+    let result = digits.substring(0, 1);
+    if (digits.length > 1) {
+      result += ' (' + digits.substring(1, Math.min(4, digits.length));
+    }
+    if (digits.length >= 4) {
+      result += ') ';
+    }
+    if (digits.length > 4) {
+      result += digits.substring(4, Math.min(7, digits.length));
+    }
+    if (digits.length > 7) {
+      result += ' ' + digits.substring(7, Math.min(9, digits.length));
+    }
+    if (digits.length > 9) {
+      result += ' ' + digits.substring(9, Math.min(11, digits.length));
+    }
     return result;
   };
 
@@ -312,7 +323,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
                       type="tel" name="phone" className="form-input"
                       value={formData.phone ? formatPhone(formData.phone) : ''}
                       onChange={handlePhoneChange}
-                      placeholder="(05__) ___ __ __"
+                      placeholder="0 (5__) ___ __ __"
                       style={errors.phone ? { borderColor: '#ef4444' } : {}}
                     />
                     {errors.phone && <div style={errorStyle}>{errors.phone}</div>}
