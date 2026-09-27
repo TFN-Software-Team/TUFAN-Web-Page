@@ -263,8 +263,8 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
           ) : (
             projects.map((project, index) => (
               <div key={project.id} className="premium-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', padding: 'clamp(1.25rem, 3vw, 3rem)' }}>
-                <div style={{ flex: '0 0 auto', padding: '1.25rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                  {index % 2 === 0 ? <Smartphone size={32} strokeWidth={1.5} /> : <Network size={32} strokeWidth={1.5} />}
+                <div style={{ flex: '0 0 auto', padding: '1.25rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src="/teknofest.png" alt="Teknofest Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', filter: 'grayscale(100%) contrast(1.2) opacity(0.85)' }} />
                 </div>
                 <div style={{ flex: '1 1 200px' }}>
                   <h3 style={{ fontSize: 'clamp(1.1rem, 3vw, 1.5rem)', margin: '0 0 0.5rem 0' }}>{project.title}</h3>
