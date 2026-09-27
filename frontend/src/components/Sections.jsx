@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, ShieldCheck, Cpu, Smartphone, Network, X, Calendar, Camera, Settings, Monitor, Megaphone, Wrench, Zap, BatteryCharging } from 'lucide-react';
+import { Users, ShieldCheck, Cpu, X, Calendar, Camera, Settings, Monitor, Megaphone, Wrench, Zap, BatteryCharging } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
 import MediaMarquee from './MediaMarquee';
@@ -16,81 +16,12 @@ const DEFAULT_FEATURE_CARDS_EN = [
   { id: 3, title: 'Competition & Performance', description: 'We compete with a podium goal at TEKNOFEST and the International Efficiency Challenge Electric Vehicle Races.' }
 ];
 
-const DEFAULT_MEDIA_ITEMS = [
-  {
-    id: 1,
-    title: 'TEKNOFEST Hackathon 2025',
-    date: 'May 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
-    description: 'As the TUFAN Electric Vehicle team, we were honored with first place at the TEKNOFEST 2025 Hackathon with our domestically developed battery management software and telemetry infrastructure.'
-  },
-  {
-    id: 2,
-    title: 'Electric Vehicle Chassis Test Event',
-    date: 'April 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-    description: 'We successfully completed our next-generation carbon fiber chassis tests. The aerodynamic drag coefficient and strength tests of our vehicle exceeded the targeted standards.'
-  },
-  {
-    id: 3,
-    title: 'Corporate Sponsorship Summit',
-    date: 'March 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
-    description: 'A gala event where we gathered with our industry partners and main sponsors to introduce the TUFAN Electric Vehicle vision and our new vehicle concept.'
-  },
-  {
-    id: 4,
-    title: 'Autonomous Driving Workshop',
-    date: 'February 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
-    description: 'During a 3-day campus workshop organized by our AI and computer vision team, in-vehicle image processing and lane-following systems were tested live.'
-  },
-  {
-    id: 5,
-    title: 'Domestic Innovation Exhibition',
-    date: 'January 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-    description: 'We presented our self-developed high-efficiency motor driver cards and on-board charging units to students and academics at our university\'s innovation exhibition.'
-  }
-];
 
-const DEFAULT_MEDIA_ITEMS_TR = [
-  {
-    id: 1,
-    title: 'TEKNOFEST Hackathon 2025',
-    date: 'Mayıs 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
-    description: 'TUFAN Elektromobil ekibi olarak katıldığımız TEKNOFEST 2025 Hackathon etkinliğinde geliştirdiğimiz yerli batarya yönetim yazılımı ve telemetri altyapımızla birincilik ödülüne layık görüldük.'
-  },
-  {
-    id: 2,
-    title: 'Elektromobil Şasi Test Etkinliği',
-    date: 'Nisan 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-    description: 'Yeni nesil karbon fiber şasi testlerimizi başarıyla tamamladık. Aracımızın aerodinamik sürtünme katsayısı ve mukavemet testleri hedeflenen standartların üzerine çıktı.'
-  },
-  {
-    id: 3,
-    title: 'Kurumsal Sponsorluk Zirvesi',
-    date: 'Mart 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
-    description: 'Sanayi ortaklarımız ve ana sponsorlarımızla bir araya gelerek TUFAN Elektromobil vizyonunu ve yeni araç konseptimizi tanıttığımız gala organizasyonumuz.'
-  },
-  {
-    id: 4,
-    title: 'Otonom Sürüş Çalıştayı',
-    date: 'Şubat 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
-    description: 'Yapay zeka ve bilgisayarlı görü ekibimizin düzenlediği 3 günlük kampüs çalıştayında araç içi görüntü işleme ve şerit takip sistemleri canlı olarak test edildi.'
-  },
-  {
-    id: 5,
-    title: 'Yerli İnovasyon Sergisi',
-    date: 'Ocak 2025',
-    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-    description: 'Kendi geliştirdiğimiz yüksek verimlilikli motor sürücü kartlarımızı ve yerleşik şarj ünitelerimizi üniversitemiz inovasyon sergisinde öğrencilere ve akademisyenlere sunduk.'
-  }
-];
+
+const DEFAULT_SOCIAL_LINKS = {
+  instagram: 'https://www.instagram.com/tufanelektromobil?igsh=bW0zemZ0YW9tNXM2',
+  linkedin: 'https://www.linkedin.com/company/akdeniz-tufan-elektromobil/'
+};
 
 export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }) {
   const [siteText, setSiteText] = useState('');
@@ -98,7 +29,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
   const [heroTitle2, setHeroTitle2] = useState('');
   const [projects, setProjects] = useState([]);
   const [mediaItems, setMediaItems] = useState([]);
-  const [socialLinks, setSocialLinks] = useState({});
+  const [socialLinks, setSocialLinks] = useState(DEFAULT_SOCIAL_LINKS);
   const [featureCards, setFeatureCards] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
 
@@ -123,16 +54,32 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
   };
 
   useEffect(() => {
-    // Hero Titles — admin tarafından özelleştirilebilir, yoksa dile göre default
+    // Hero Titles — localStorage'dan hızlıca yükle (flash önleme)
     const savedText = localStorage.getItem('site_about_text');
     setSiteText(savedText || '');
-
     setHeroTitle1(localStorage.getItem('site_hero_title1') || '');
     setHeroTitle2(localStorage.getItem('site_hero_title2') || '');
 
-    // Fetch settings from API
+    // Feature Cards — localStorage'dan hızlıca yükle
+    const savedFeatures = localStorage.getItem('site_feature_cards');
+    if (savedFeatures) {
+      try { setFeatureCards(JSON.parse(savedFeatures)); } catch (e) { setFeatureCards(null); }
+    } else {
+      setFeatureCards(null);
+    }
+
+    // Social Links — localStorage'dan hızlıca yükle
+    const savedSocial = localStorage.getItem('site_social_links');
+    if (savedSocial) {
+      try { setSocialLinks(JSON.parse(savedSocial)); } catch (e) { /* default kalır */ }
+    }
+
+    // Settings API'den güncel verileri çek (localStorage'ı override eder)
     fetch(`${API_BASE}/settings/`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (Array.isArray(data)) {
           const settingsMap = {};
@@ -140,22 +87,22 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
           if (settingsMap.site_about_text) setSiteText(settingsMap.site_about_text);
           if (settingsMap.site_hero_title1) setHeroTitle1(settingsMap.site_hero_title1);
           if (settingsMap.site_hero_title2) setHeroTitle2(settingsMap.site_hero_title2);
-          if (settingsMap.site_feature_cards) setFeatureCards(JSON.parse(settingsMap.site_feature_cards));
+          if (settingsMap.site_feature_cards) {
+            try { setFeatureCards(JSON.parse(settingsMap.site_feature_cards)); } catch (e) { /* localStorage değeri kalır */ }
+          }
+          if (settingsMap.site_social_links) {
+            try { setSocialLinks(JSON.parse(settingsMap.site_social_links)); } catch (e) { /* default kalır */ }
+          }
         }
       })
       .catch(err => console.error('Error fetching settings from API:', err));
 
-    // Feature Cards — admin özelleştirmesi varsa onu kullan
-    const savedFeatures = localStorage.getItem('site_feature_cards');
-    if (savedFeatures) {
-      setFeatureCards(JSON.parse(savedFeatures));
-    } else {
-      setFeatureCards(null);
-    }
-
     // Medya (from DB API)
     fetch(`${API_BASE}/media/`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (Array.isArray(data)) setMediaItems(data);
       })
@@ -163,7 +110,10 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
 
     // Projeler (from DB API)
     fetch(`${API_BASE}/projeler/`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (Array.isArray(data)) setProjects(data);
       })
@@ -180,21 +130,19 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
   const displayMediaItems = mediaItems;
 
   const getIconForFeature = (title, index) => {
+    const fallbackIcons = [Users, Cpu, ShieldCheck];
     if (!title) {
-      const defaultIcons = [Users, Cpu, ShieldCheck];
-      return defaultIcons[index % defaultIcons.length];
+      return fallbackIcons[index % fallbackIcons.length];
     }
-    const t = title.toUpperCase();
-    if (t.includes('MEKANİK') || t.includes('MEKANIK')) return Settings;
-    if (t.includes('MOTOR SÜRÜCÜ') || t.includes('MOTOR SURUCU')) return Cpu;
-    if (t.includes('YAZILIM')) return Monitor;
-    if (t.includes('İLETİŞİM') || t.includes('ILETISIM')) return Megaphone;
-    if (t.includes('MOTOR')) return Wrench;
-    if (t.includes('ŞARJ') || t.includes('SARJ')) return Zap;
-    if (t.includes('BATARYA')) return BatteryCharging;
-    
-    const defaultIcons = [Users, Cpu, ShieldCheck];
-    return defaultIcons[index % defaultIcons.length];
+    const upperTitle = title.toUpperCase();
+    if (upperTitle.includes('MEKANİK') || upperTitle.includes('MEKANIK')) return Settings;
+    if (upperTitle.includes('MOTOR SÜRÜCÜ') || upperTitle.includes('MOTOR SURUCU')) return Cpu;
+    if (upperTitle.includes('YAZILIM')) return Monitor;
+    if (upperTitle.includes('İLETİŞİM') || upperTitle.includes('ILETISIM')) return Megaphone;
+    if (upperTitle.includes('MOTOR')) return Wrench;
+    if (upperTitle.includes('ŞARJ') || upperTitle.includes('SARJ')) return Zap;
+    if (upperTitle.includes('BATARYA')) return BatteryCharging;
+    return fallbackIcons[index % fallbackIcons.length];
   };
 
   return (
@@ -264,7 +212,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
             projects.map((project, index) => (
               <div key={project.id} className="premium-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', padding: 'clamp(1.25rem, 3vw, 3rem)' }}>
                 <div style={{ flex: '0 0 auto', padding: '1.25rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img src="/teknofest.png" alt="Teknofest Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', filter: 'grayscale(100%) contrast(1.2) opacity(0.85)' }} />
+                  <img src="/teknofest.webp" alt="Teknofest Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', filter: 'grayscale(100%) contrast(1.2) opacity(0.85)' }} />
                 </div>
                 <div style={{ flex: '1 1 200px' }}>
                   <h3 style={{ fontSize: 'clamp(1.1rem, 3vw, 1.5rem)', margin: '0 0 0.5rem 0' }}>{project.title}</h3>

@@ -46,7 +46,7 @@ def get_db():
 @app.post("/projeler", response_model=schemas.Project)
 @app.post("/projeler/", response_model=schemas.Project)
 def proje_olustur(proje: schemas.ProjectCreate, db: Session = Depends(get_db)):
-    yeni_proje = models.Project(**proje.dict())
+    yeni_proje = models.Project(**proje.model_dump())
     db.add(yeni_proje)
     db.commit()
     db.refresh(yeni_proje)
@@ -67,7 +67,7 @@ def proje_guncelle(proje_id: int, proje: schemas.ProjectCreate, db: Session = De
     if not db_proje:
         raise HTTPException(status_code=404, detail="Proje bulunamadı")
     
-    for key, value in proje.dict().items():
+    for key, value in proje.model_dump().items():
         setattr(db_proje, key, value)
     
     db.commit()
@@ -114,7 +114,7 @@ def medyala_listele(db: Session = Depends(get_db)):
 @app.post("/media", response_model=schemas.Media)
 @app.post("/media/", response_model=schemas.Media)
 def medya_olustur(medya: schemas.MediaCreate, db: Session = Depends(get_db)):
-    m_dict = medya.dict()
+    m_dict = medya.model_dump()
     img = m_dict.get("imageUrl") or m_dict.get("image_url") or ""
     yeni_medya = models.Media(
         title=m_dict.get("title"),
@@ -140,7 +140,7 @@ def medya_guncelle(media_id: int, medya: schemas.MediaCreate, db: Session = Depe
     db_medya = db.query(models.Media).filter(models.Media.id == media_id).first()
     if not db_medya:
         raise HTTPException(status_code=404, detail="Medya bulunamadı")
-    m_dict = medya.dict()
+    m_dict = medya.model_dump()
     if "title" in m_dict and m_dict["title"] is not None: db_medya.title = m_dict["title"]
     if "date" in m_dict and m_dict["date"] is not None: db_medya.date = m_dict["date"]
     if "description" in m_dict and m_dict["description"] is not None: db_medya.description = m_dict["description"]
@@ -179,7 +179,7 @@ def tum_medyalari_sil(db: Session = Depends(get_db)):
 @app.post("/applications", response_model=schemas.Application)
 @app.post("/applications/", response_model=schemas.Application)
 def create_application(application: schemas.ApplicationCreate, db: Session = Depends(get_db)):
-    db_application = models.Application(**application.dict())
+    db_application = models.Application(**application.model_dump())
     db.add(db_application)
     db.commit()
     db.refresh(db_application)

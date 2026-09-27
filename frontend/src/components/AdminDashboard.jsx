@@ -649,9 +649,10 @@ export default function AdminDashboard() {
     updateLastModified('about');
   };
 
-  const handleSaveSocial = (e) => {
+  const handleSaveSocial = async (e) => {
     e.preventDefault();
     localStorage.setItem('site_social_links', JSON.stringify(socialLinks));
+    await saveSettingToApi('site_social_links', JSON.stringify(socialLinks));
     updateLastModified('social');
   };
 
