@@ -91,13 +91,24 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
     { id: 6, name: 'Mekanik Ekibi', active: true }
   ];
 
+  const TEAM_MAP_EN = {
+    'Batarya Ekibi': 'Battery Team',
+    'Yazılım Ekibi': 'Software Team',
+    'Motor Ekibi': 'Motor Team',
+    'Motor Sürücü Ekibi': 'Motor Driver Team',
+    'Yerleşik Şarj Ekibi': 'On-Board Charger Team',
+    'Mekanik Ekibi': 'Mechanical Team',
+    'İletişim Ekibi': 'Communication Team',
+    'Tanıtım Ekibi': 'PR & Media Team'
+  };
+
   const savedTeamsRaw = localStorage.getItem('site_teams');
   const teamsData = savedTeamsRaw ? JSON.parse(savedTeamsRaw) : DEFAULT_TEAMS;
 
   const activeTeams = teamsData
     .filter(tm => tm.active)
     .map(tm => tm.name)
-    .sort((a, b) => a.localeCompare(b, 'tr'));
+    .sort((a, b) => a.localeCompare(b, lang === 'tr' ? 'tr' : 'en'));
 
   // Only allow letters and spaces for name fields
   const handleNameChange = (e) => {
@@ -391,7 +402,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
                     <option value="" disabled>{t.selectTeam}</option>
                     {activeTeams.length > 0 ? (
                       activeTeams.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
+                        <option key={opt} value={opt}>{lang === 'en' ? (TEAM_MAP_EN[opt] || opt) : opt}</option>
                       ))
                     ) : (
                       <option disabled>{t.noActiveTeams}</option>

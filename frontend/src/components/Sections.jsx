@@ -121,13 +121,80 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
 
   }, [lang, mediaRefreshKey]);
 
-  // Varsayılan değerler
-  const displayHero1 = heroTitle1 || t.hero1Default;
-  const displayHero2 = heroTitle2 || t.hero2Default;
-  const displayAbout = siteText || t.aboutDefault;
-  const defaultFeatureCards = lang === 'tr' ? DEFAULT_FEATURE_CARDS_TR : DEFAULT_FEATURE_CARDS_EN;
-  const displayFeatureCards = featureCards || defaultFeatureCards;
-  const displayMediaItems = mediaItems;
+  const MEDIA_TRANSLATIONS_EN = {
+    'TEKNOFEST Hackathon 2025': {
+      title: 'TEKNOFEST Hackathon 2025',
+      date: 'May 2025',
+      description: 'As the TUFAN Electric Vehicle team, we were awarded first place at the TEKNOFEST 2025 Hackathon event for our local battery management software and telemetry infrastructure.'
+    },
+    'Elektromobil Şasi Test Etkinliği': {
+      title: 'Electric Vehicle Chassis Testing',
+      date: 'April 2025',
+      description: 'We successfully completed tests on our next-generation carbon fiber chassis. Aerodynamic drag coefficient and structural strength tests exceeded targeted standards.'
+    },
+    'Kurumsal Sponsorluk Zirvesi': {
+      title: 'Corporate Sponsorship Summit',
+      date: 'March 2025',
+      description: 'Our gala organization bringing together our industry partners and main sponsors to introduce the TUFAN Electric vision and our new vehicle concept.'
+    },
+    'Otonom Sürüş Çalıştayı': {
+      title: 'Autonomous Driving Workshop',
+      date: 'February 2025',
+      description: 'In-vehicle image processing and lane tracking systems were tested live during a 3-day campus workshop organized by our AI and computer vision team.'
+    },
+    'Yerli İnovasyon Sergisi': {
+      title: 'Local Innovation Exhibition',
+      date: 'January 2025',
+      description: 'We presented our self-developed high-efficiency motor driver boards and on-board charger units to students and academics at our university innovation exhibition.'
+    }
+  };
+
+  const PROJECT_TRANSLATIONS_EN = {
+    'TUFAN Elektromobil v1': {
+      title: 'TUFAN Electric Vehicle v1',
+      description: 'High efficiency, custom-designed motor driver and lightweight carbon-fiber composite chassis electric race vehicle developed for TEKNOFEST.'
+    },
+    'TUFAN Otonom': {
+      title: 'TUFAN Autonomous',
+      description: 'Next-generation electric vehicle platform equipped with LiDAR, camera, and deep learning algorithms capable of autonomous navigation.'
+    }
+  };
+
+  const translateDate = (dateStr) => {
+    if (!dateStr || lang !== 'en') return dateStr;
+    const months = {
+      'Ocak': 'January', 'Şubat': 'February', 'Mart': 'March', 'Nisan': 'April',
+      'Mayıs': 'May', 'Haziran': 'June', 'Temmuz': 'July', 'Ağustos': 'August',
+      'Eylül': 'September', 'Ekim': 'October', 'Kasım': 'November', 'Aralık': 'December'
+    };
+    let res = dateStr;
+    Object.keys(months).forEach(m => { res = res.replace(m, months[m]); });
+    return res;
+  };
+
+  // Varsayılan ve dile göre belirlenen değerler
+  const displayHero1 = lang === 'en' ? t.hero1Default : (heroTitle1 || t.hero1Default);
+  const displayHero2 = lang === 'en' ? t.hero2Default : (heroTitle2 || t.hero2Default);
+  const displayAbout = lang === 'en' ? t.aboutDefault : (siteText || t.aboutDefault);
+  const displayFeatureCards = lang === 'en' ? DEFAULT_FEATURE_CARDS_EN : (featureCards || DEFAULT_FEATURE_CARDS_TR);
+
+  const displayMediaItems = mediaItems.map(item => {
+    if (lang === 'en') {
+      const trans = MEDIA_TRANSLATIONS_EN[item.title];
+      if (trans) {
+        return { ...item, title: trans.title, date: trans.date, description: trans.description };
+      }
+      return { ...item, date: translateDate(item.date) };
+    }
+    return item;
+  });
+
+  const displayProjects = projects.map(proj => {
+    if (lang === 'en' && PROJECT_TRANSLATIONS_EN[proj.title]) {
+      return { ...proj, ...PROJECT_TRANSLATIONS_EN[proj.title] };
+    }
+    return proj;
+  });
 
   const getIconForFeature = (title, index) => {
     const fallbackIcons = [Users, Cpu, ShieldCheck];
@@ -135,13 +202,15 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
       return fallbackIcons[index % fallbackIcons.length];
     }
     const upperTitle = title.toUpperCase();
-    if (upperTitle.includes('MEKANİK') || upperTitle.includes('MEKANIK')) return Settings;
-    if (upperTitle.includes('MOTOR SÜRÜCÜ') || upperTitle.includes('MOTOR SURUCU')) return Cpu;
-    if (upperTitle.includes('YAZILIM')) return Monitor;
-    if (upperTitle.includes('İLETİŞİM') || upperTitle.includes('ILETISIM')) return Megaphone;
+    if (upperTitle.includes('MEKANİK') || upperTitle.includes('MEKANIK') || upperTitle.includes('MECHANICAL')) return Settings;
+    if (upperTitle.includes('MOTOR SÜRÜCÜ') || upperTitle.includes('MOTOR SURUCU') || upperTitle.includes('DRIVER')) return Cpu;
+    if (upperTitle.includes('YAZILIM') || upperTitle.includes('SOFTWARE')) return Monitor;
+    if (upperTitle.includes('İLETİŞİM') || upperTitle.includes('ILETISIM') || upperTitle.includes('DISCIPLINARY') || upperTitle.includes('TEAMWORK')) return Users;
     if (upperTitle.includes('MOTOR')) return Wrench;
     if (upperTitle.includes('ŞARJ') || upperTitle.includes('SARJ')) return Zap;
-    if (upperTitle.includes('BATARYA')) return BatteryCharging;
+    if (upperTitle.includes('BATARYA') || upperTitle.includes('BATTERY')) return BatteryCharging;
+    if (upperTitle.includes('DOMESTIC') || upperTitle.includes('YERLİ') || upperTitle.includes('PRODUCTION')) return ShieldCheck;
+    if (upperTitle.includes('COMPETITION') || upperTitle.includes('PERFORMANCE') || upperTitle.includes('YARIŞMA')) return Zap;
     return fallbackIcons[index % fallbackIcons.length];
   };
 
@@ -206,10 +275,10 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
         <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>{t.projectsTitle}</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          {projects.length === 0 ? (
+          {displayProjects.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)' }}>{t.noProjects}</p>
           ) : (
-            projects.map((project, index) => (
+            displayProjects.map((project, index) => (
               <div key={project.id} className="premium-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', padding: 'clamp(1.25rem, 3vw, 3rem)' }}>
                 <div style={{ flex: '0 0 auto', padding: '1.25rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <img src="/teknofest.webp" alt="Teknofest Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', filter: 'grayscale(100%) contrast(1.2) opacity(0.85)' }} />
