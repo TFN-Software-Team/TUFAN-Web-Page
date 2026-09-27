@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, ShieldCheck, Cpu, Smartphone, Network, X, Calendar, Camera } from 'lucide-react';
+import { Users, ShieldCheck, Cpu, Smartphone, Network, X, Calendar, Camera, Settings, Monitor, Megaphone, Wrench, Zap, BatteryCharging } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
 import MediaMarquee from './MediaMarquee';
@@ -179,6 +179,24 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
   const displayFeatureCards = featureCards || defaultFeatureCards;
   const displayMediaItems = mediaItems;
 
+  const getIconForFeature = (title, index) => {
+    if (!title) {
+      const defaultIcons = [Users, Cpu, ShieldCheck];
+      return defaultIcons[index % defaultIcons.length];
+    }
+    const t = title.toUpperCase();
+    if (t.includes('MEKANİK') || t.includes('MEKANIK')) return Settings;
+    if (t.includes('MOTOR SÜRÜCÜ') || t.includes('MOTOR SURUCU')) return Cpu;
+    if (t.includes('YAZILIM')) return Monitor;
+    if (t.includes('İLETİŞİM') || t.includes('ILETISIM')) return Megaphone;
+    if (t.includes('MOTOR')) return Wrench;
+    if (t.includes('ŞARJ') || t.includes('SARJ')) return Zap;
+    if (t.includes('BATARYA')) return BatteryCharging;
+    
+    const defaultIcons = [Users, Cpu, ShieldCheck];
+    return defaultIcons[index % defaultIcons.length];
+  };
+
   return (
     <div className="container" style={{ marginTop: '6rem' }}>
 
@@ -209,8 +227,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
 
         <div className="premium-grid">
           {displayFeatureCards.map((card, index) => {
-            const icons = [Users, Cpu, ShieldCheck];
-            const Icon = icons[index % icons.length];
+            const Icon = getIconForFeature(card.title, index);
             return (
               <div className="premium-card" key={card.id}>
                 <div className="animate-float" style={{
