@@ -31,3 +31,9 @@ class Application(Base):
     reason = Column(String)
     about_me = Column(String)
     admin_note = Column(String, nullable=True)
+
+class Setting(Base):
+    __tablename__ = "settings"
+    
+    key = Column(String, primary_key=True, index=True)
+    value = Column(String)

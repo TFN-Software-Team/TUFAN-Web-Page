@@ -233,10 +233,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/settings/`);
+      if (res.ok) {
+        const data = await res.json();
+        const settingsMap = {};
+        data.forEach(s => { settingsMap[s.key] = s.value; });
+        if (settingsMap.site_about_text) setAboutText(settingsMap.site_about_text);
+        if (settingsMap.site_hero_title1) setHeroTitle1(settingsMap.site_hero_title1);
+        if (settingsMap.site_hero_title2) setHeroTitle2(settingsMap.site_hero_title2);
+      }
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+    }
+  };
+
   useEffect(() => {
     fetchApplications();
     fetchProjects();
     fetchMediaItems();
+    fetchSettings();
     if (activeTab === 'applications') {
       setSelectedApplication(null);
       setCurrentPage(1);
@@ -604,11 +621,28 @@ export default function AdminDashboard() {
   };
 
   // Handlers
-  const handleSaveAbout = (e) => {
+  const saveSettingToApi = async (key, value) => {
+    try {
+      await fetch(`${API_BASE}/settings/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+      });
+    } catch (err) {
+      console.error('Error saving setting:', key, err);
+    }
+  };
+
+  const handleSaveAbout = async (e) => {
     e.preventDefault();
     localStorage.setItem('site_about_text', aboutText);
     localStorage.setItem('site_hero_title1', heroTitle1);
     localStorage.setItem('site_hero_title2', heroTitle2);
+
+    await saveSettingToApi('site_about_text', aboutText);
+    await saveSettingToApi('site_hero_title1', heroTitle1);
+    await saveSettingToApi('site_hero_title2', heroTitle2);
+
     updateLastModified('about');
   };
 

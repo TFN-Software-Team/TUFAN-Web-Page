@@ -224,3 +224,22 @@ def delete_all_applications(db: Session = Depends(get_db)):
     db.query(models.Application).delete()
     db.commit()
     return {"message": "Tüm başvurular silindi"}
+
+# 11. AYARLAR (SETTINGS)
+@app.get("/settings", response_model=list[schemas.Setting])
+@app.get("/settings/", response_model=list[schemas.Setting])
+def get_settings(db: Session = Depends(get_db)):
+    return db.query(models.Setting).all()
+
+@app.put("/settings/{key}", response_model=schemas.Setting)
+@app.put("/settings/{key}/", response_model=schemas.Setting)
+def update_setting(key: str, setting: schemas.SettingBase, db: Session = Depends(get_db)):
+    db_setting = db.query(models.Setting).filter(models.Setting.key == key).first()
+    if db_setting:
+        db_setting.value = setting.value
+    else:
+        db_setting = models.Setting(key=key, value=setting.value)
+        db.add(db_setting)
+    db.commit()
+    db.refresh(db_setting)
+    return db_setting

@@ -130,6 +130,20 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
     setHeroTitle1(localStorage.getItem('site_hero_title1') || '');
     setHeroTitle2(localStorage.getItem('site_hero_title2') || '');
 
+    // Fetch settings from API
+    fetch(`${API_BASE}/settings/`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const settingsMap = {};
+          data.forEach(s => { settingsMap[s.key] = s.value; });
+          if (settingsMap.site_about_text) setSiteText(settingsMap.site_about_text);
+          if (settingsMap.site_hero_title1) setHeroTitle1(settingsMap.site_hero_title1);
+          if (settingsMap.site_hero_title2) setHeroTitle2(settingsMap.site_hero_title2);
+        }
+      })
+      .catch(err => console.error('Error fetching settings from API:', err));
+
     // Feature Cards — admin özelleştirmesi varsa onu kullan
     const savedFeatures = localStorage.getItem('site_feature_cards');
     if (savedFeatures) {
