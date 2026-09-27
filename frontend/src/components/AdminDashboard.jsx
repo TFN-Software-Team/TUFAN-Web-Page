@@ -117,11 +117,16 @@ export default function AdminDashboard() {
       { id: 3, name: 'Motor Ekibi', active: true },
       { id: 4, name: 'Motor Sürücü Ekibi', active: true },
       { id: 5, name: 'Yerleşik Şarj Ekibi', active: true },
-      { id: 6, name: 'Mekanik Ekibi', active: true }
+      { id: 6, name: 'Mekanik Ekibi', active: true },
+      { id: 7, name: 'Medya Ekibi', active: true }
     ];
-    const data = saved ? JSON.parse(saved) : initialTeams;
+    let data = saved ? JSON.parse(saved) : initialTeams;
+    if (!data.some(t => t.name === 'Medya Ekibi' || t.name.includes('Medya'))) {
+      data.push({ id: 7, name: 'Medya Ekibi', active: true });
+    }
     return data.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
   });
+  const [newTeamName, setNewTeamName] = useState('');
 
   // Forms State
   const [newProject, setNewProject] = useState({ title: '', description: '' });
@@ -250,6 +255,21 @@ export default function AdminDashboard() {
         if (settingsMap.site_hero_title1) setHeroTitle1(settingsMap.site_hero_title1);
         if (settingsMap.site_hero_title2) setHeroTitle2(settingsMap.site_hero_title2);
         if (settingsMap.site_feature_cards) setFeatureCards(JSON.parse(settingsMap.site_feature_cards));
+        if (settingsMap.site_social_links) setSocialLinks(JSON.parse(settingsMap.site_social_links));
+        if (settingsMap.site_apps_open !== undefined) {
+          const isOpen = settingsMap.site_apps_open === 'true';
+          setAppsOpen(isOpen);
+          localStorage.setItem('site_apps_open', isOpen);
+        }
+        if (settingsMap.site_teams) {
+          let parsedTeams = JSON.parse(settingsMap.site_teams);
+          if (!parsedTeams.some(t => t.name === 'Medya Ekibi' || t.name.includes('Medya'))) {
+            parsedTeams.push({ id: 7, name: 'Medya Ekibi', active: true });
+          }
+          const sorted = parsedTeams.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+          setTeams(sorted);
+          localStorage.setItem('site_teams', JSON.stringify(sorted));
+        }
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -660,17 +680,45 @@ export default function AdminDashboard() {
     updateLastModified('social');
   };
 
-  const toggleAppsOpen = () => {
+  const toggleAppsOpen = async () => {
     const newVal = !appsOpen;
     setAppsOpen(newVal);
     localStorage.setItem('site_apps_open', newVal);
+    await saveSettingToApi('site_apps_open', String(newVal));
   };
 
-  const toggleTeamActive = (id) => {
+  const toggleTeamActive = async (id) => {
     const updated = teams.map(t => t.id === id ? { ...t, active: !t.active } : t);
     setTeams(updated);
     localStorage.setItem('site_teams', JSON.stringify(updated));
+    await saveSettingToApi('site_teams', JSON.stringify(updated));
     updateLastModified('teams');
+  };
+
+  const handleAddTeam = async (e) => {
+    e.preventDefault();
+    if (!newTeamName.trim()) return;
+    const name = newTeamName.trim();
+    if (teams.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+      alert('Bu isimde bir ekip zaten mevcut.');
+      return;
+    }
+    const updated = [...teams, { id: Date.now(), name, active: true }].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+    setTeams(updated);
+    setNewTeamName('');
+    localStorage.setItem('site_teams', JSON.stringify(updated));
+    await saveSettingToApi('site_teams', JSON.stringify(updated));
+    updateLastModified('teams');
+  };
+
+  const handleDeleteTeam = (id) => {
+    requestConfirm("Bu ekibi listeden silmek istediğinize emin misiniz?", async () => {
+      const updated = teams.filter(t => t.id !== id);
+      setTeams(updated);
+      localStorage.setItem('site_teams', JSON.stringify(updated));
+      await saveSettingToApi('site_teams', JSON.stringify(updated));
+      updateLastModified('teams');
+    });
   };
 
   // --- PROJECTS ---
@@ -1545,18 +1593,43 @@ export default function AdminDashboard() {
                   
                   {showAppSettings && (
                     <div className="animate-fade-in" style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-                      <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Buradan hangi ekipler için başvuru alınacağını belirleyebilirsiniz. Kapalı olan ekipler başvuru formunda görünmez.</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                      <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Buradan hangi ekipler için başvuru alınacağını belirleyebilir veya yeni ekip ekleyebilirsiniz. Kapalı olan ekipler başvuru formunda görünmez.</p>
+                      
+                      <form onSubmit={handleAddTeam} style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', maxWidth: '500px' }}>
+                        <input
+                          type="text"
+                          placeholder="Yeni Ekip Adı (Örn: Tasarım Ekibi)..."
+                          value={newTeamName}
+                          onChange={(e) => setNewTeamName(e.target.value)}
+                          className="form-input"
+                          style={{ flex: 1 }}
+                        />
+                        <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
+                          <Plus size={16} /> Ekip Ekle
+                        </button>
+                      </form>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
                         {teams.map(team => (
                           <div key={team.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: team.active ? 'rgba(17, 57, 150, 0.05)' : 'var(--bg-color)' }}>
-                            <span style={{ fontWeight: '600', color: team.active ? 'var(--tfn-blue)' : 'var(--text-secondary)', fontSize: '0.95rem' }}>{team.name}</span>
-                            <button 
-                              onClick={() => toggleTeamActive(team.id)} 
-                              className={`btn ${team.active ? 'btn-primary' : 'btn-outline'}`}
-                              style={{ fontSize: '0.7rem', padding: '0.3rem 0.8rem' }}
-                            >
-                              {team.active ? 'Aktif' : 'Pasif'}
-                            </button>
+                            <span style={{ fontWeight: '600', color: team.active ? '#ff640a' : 'var(--text-secondary)', fontSize: '0.95rem' }}>{team.name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <button 
+                                onClick={() => toggleTeamActive(team.id)} 
+                                className={`btn ${team.active ? 'btn-primary' : 'btn-outline'}`}
+                                style={{ fontSize: '0.7rem', padding: '0.3rem 0.8rem' }}
+                              >
+                                {team.active ? 'Aktif' : 'Pasif'}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTeam(team.id)}
+                                className="btn-icon"
+                                style={{ color: '#ef4444', padding: '0.3rem' }}
+                                title="Ekibi Sil"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>

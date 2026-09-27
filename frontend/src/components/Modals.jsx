@@ -88,7 +88,8 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
     { id: 3, name: 'Motor Ekibi', active: true },
     { id: 4, name: 'Motor Sürücü Ekibi', active: true },
     { id: 5, name: 'Yerleşik Şarj Ekibi', active: true },
-    { id: 6, name: 'Mekanik Ekibi', active: true }
+    { id: 6, name: 'Mekanik Ekibi', active: true },
+    { id: 7, name: 'Medya Ekibi', active: true }
   ];
 
   const TEAM_MAP_EN = {
@@ -98,12 +99,16 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
     'Motor Sürücü Ekibi': 'Motor Driver Team',
     'Yerleşik Şarj Ekibi': 'On-Board Charger Team',
     'Mekanik Ekibi': 'Mechanical Team',
+    'Medya Ekibi': 'Media Team',
     'İletişim Ekibi': 'Communication Team',
     'Tanıtım Ekibi': 'PR & Media Team'
   };
 
   const savedTeamsRaw = localStorage.getItem('site_teams');
-  const teamsData = savedTeamsRaw ? JSON.parse(savedTeamsRaw) : DEFAULT_TEAMS;
+  let teamsData = savedTeamsRaw ? JSON.parse(savedTeamsRaw) : DEFAULT_TEAMS;
+  if (!teamsData.some(tm => tm.name === 'Medya Ekibi' || tm.name.includes('Medya'))) {
+    teamsData = [...teamsData, { id: 7, name: 'Medya Ekibi', active: true }];
+  }
 
   const activeTeams = teamsData
     .filter(tm => tm.active)

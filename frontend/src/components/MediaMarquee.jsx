@@ -259,7 +259,7 @@ export default function MediaMarquee({ items = [], onSelectMedia, dragHint = 'â†
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   fontSize: '0.75rem',
-                  color: 'var(--tfn-blue)',
+                  color: '#ff640a',
                   fontWeight: '600'
                 }}>
                   <span>{exploreLabel}</span>

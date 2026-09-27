@@ -272,7 +272,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
       </section>
 
       <section id="projects" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem' }}>
-        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--tfn-blue)' }}>{t.projectsTitle}</h2>
+        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '3rem', color: 'var(--text-primary)' }}>{t.projectsTitle}</h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {displayProjects.length === 0 ? (
@@ -298,7 +298,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
 
       {/* Media & Archive Section */}
       <section id="media" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem', overflow: 'hidden' }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', color: 'var(--tfn-blue)' }}>{t.mediaTitle}</h2>
+        <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', color: 'var(--text-primary)' }}>{t.mediaTitle}</h2>
 
         {displayMediaItems.length === 0 ? (
           <p style={{ color: 'var(--text-secondary)' }}>{t.noMedia}</p>
