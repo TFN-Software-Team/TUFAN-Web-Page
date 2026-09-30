@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
+import os
+import secrets
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from . import models, schemas
@@ -34,11 +36,35 @@ app.add_middleware(
 )
 # --- CORS AYARLARI BİTİŞİ ---
 
+# Aktif oturum token'ları
+VALID_TOKENS = set()
+
 # Health check endpoint — Cron job ve uptime monitor için
 @app.get("/health")
 @app.get("/health/")
 def health_check():
     return {"status": "ok"}
+
+# Admin Login Endpoint
+@app.post("/login", response_model=schemas.LoginResponse)
+@app.post("/login/", response_model=schemas.LoginResponse)
+def login(req: schemas.LoginRequest):
+    expected_user = os.getenv("ADMIN_USERNAME", "admin")
+    expected_pass = os.getenv("ADMIN_PASSWORD", "1234")
+    if req.username == expected_user and req.password == expected_pass:
+        token = secrets.token_hex(16)
+        VALID_TOKENS.add(token)
+        return {"success": True, "token": token, "message": "Giriş başarılı"}
+    return {"success": False, "token": None, "message": "Kullanıcı adı veya şifre hatalı"}
+
+# Token Doğrulama Endpoint
+@app.get("/verify-token")
+@app.get("/verify-token/")
+def verify_token(token: str = Query(default="")):
+    if token and token in VALID_TOKENS:
+        return {"valid": True}
+    return {"valid": False}
+
 
 def get_db():
     db = SessionLocal()

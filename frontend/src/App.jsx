@@ -21,6 +21,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('admin_token');
     setIsAdmin(false);
     // Admin panelinden çıkışta medyayı yeniden yükle
     setMediaRefreshKey(prev => prev + 1);

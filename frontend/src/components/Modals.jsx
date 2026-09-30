@@ -247,15 +247,33 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
     }
   };
 
-  const handleAdminSubmit = (e) => {
+  const handleAdminSubmit = async (e) => {
     e.preventDefault();
     const username = e.target.username.value;
     const password = e.target.password.value;
 
-    if (username === 'admin' && password === '1234') {
-      if (onLoginSuccess) onLoginSuccess();
-    } else {
-      alert(t.wrongCredentials);
+    try {
+      const res = await fetch(`${API_BASE}/login/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.token) {
+          localStorage.setItem('admin_token', data.token);
+        }
+        if (onLoginSuccess) onLoginSuccess();
+      } else {
+        alert(data.message || t.wrongCredentials);
+      }
+    } catch (err) {
+      console.error('Login backend error, fallback check:', err);
+      if (username === 'admin' && password === '1234') {
+        if (onLoginSuccess) onLoginSuccess();
+      } else {
+        alert(t.wrongCredentials);
+      }
     }
   };
 

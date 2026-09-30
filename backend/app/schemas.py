@@ -1,6 +1,16 @@
 from typing import Optional
 from pydantic import BaseModel
 
+# Admin Giriş Şeması
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    success: bool
+    token: Optional[str] = None
+    message: str
+
 # Temel proje özellikleri
 class ProjectBase(BaseModel):
     title: str
