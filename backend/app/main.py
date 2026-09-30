@@ -50,7 +50,7 @@ def health_check():
 @app.post("/login/", response_model=schemas.LoginResponse)
 def login(req: schemas.LoginRequest):
     expected_user = os.getenv("ADMIN_USERNAME", "admin")
-    expected_pass = os.getenv("ADMIN_PASSWORD", "1234")
+    expected_pass = os.getenv("ADMIN_PASSWORD", "admin")
     if req.username == expected_user and req.password == expected_pass:
         token = secrets.token_hex(16)
         VALID_TOKENS.add(token)

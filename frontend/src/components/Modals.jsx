@@ -269,7 +269,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
       }
     } catch (err) {
       console.error('Login backend error, fallback check:', err);
-      if (username === 'admin' && password === '1234') {
+      if (username === 'admin' && password === 'admin') {
         if (onLoginSuccess) onLoginSuccess();
       } else {
         alert(t.wrongCredentials);

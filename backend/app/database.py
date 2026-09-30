@@ -13,8 +13,10 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = "sqlite:///./tufan.db"
 
-# postgres:// → postgresql+psycopg2:// dönüşümü (SQLAlchemy v2 uyumluluğu)
-if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+# postgres:// veya postgresql:// → postgresql+psycopg2:// dönüşümü (SQLAlchemy v2 + psycopg2-binary uyumluluğu)
+if SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+elif SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
 
 connect_args = {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
