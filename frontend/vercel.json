@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://tufan-backend.onrender.com/$1"
+      "destination": "https://tufan-web-page.onrender.com/$1"
     }
   ]
 }
