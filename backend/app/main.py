@@ -1,6 +1,9 @@
 import os
 import secrets
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, Request
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from . import models, schemas
@@ -22,7 +25,12 @@ with engine.connect() as conn:
     except Exception:
         pass
 
+# Rate Limiter (IP bazlı istek sınırlaması)
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(title="TUFAN Web API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -45,10 +53,11 @@ VALID_TOKENS = set()
 def health_check():
     return {"status": "ok"}
 
-# Admin Login Endpoint
+# Admin Login Endpoint (Dakikada maks 10 deneme)
 @app.post("/login", response_model=schemas.LoginResponse)
 @app.post("/login/", response_model=schemas.LoginResponse)
-def login(req: schemas.LoginRequest):
+@limiter.limit("10/minute")
+def login(request: Request, req: schemas.LoginRequest):
     expected_user = os.getenv("ADMIN_USERNAME", "admin")
     expected_pass = os.getenv("ADMIN_PASSWORD", "admin")
     if req.username == expected_user and req.password == expected_pass:
@@ -206,10 +215,11 @@ def tum_medyalari_sil(db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Tüm medyalar silindi"}
 
-# 7. BAŞVURU EKLEME (POST)
+# 7. BAŞVURU EKLEME (POST - Dakikada maks 5 başvuru)
 @app.post("/applications", response_model=schemas.Application)
 @app.post("/applications/", response_model=schemas.Application)
-def create_application(application: schemas.ApplicationCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def create_application(request: Request, application: schemas.ApplicationCreate, db: Session = Depends(get_db)):
     db_application = models.Application(**application.model_dump())
     db.add(db_application)
     db.commit()
