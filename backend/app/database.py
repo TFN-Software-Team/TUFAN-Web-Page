@@ -19,6 +19,11 @@ if SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
 elif SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
 
+# psycopg2 uyumsuzluğu yaratan 'channel_binding' parametresini temizle
+if "channel_binding=" in SQLALCHEMY_DATABASE_URL:
+    import re
+    SQLALCHEMY_DATABASE_URL = re.sub(r'[&?]channel_binding=[^&]+', '', SQLALCHEMY_DATABASE_URL)
+
 connect_args = {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
