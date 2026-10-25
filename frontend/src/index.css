@@ -687,3 +687,31 @@ a {
   to { transform: rotate(360deg); }
 }
 
+/* Project Cards & Titles */
+.project-card-interactive {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.project-card-interactive:hover {
+  border-color: rgba(17, 57, 150, 0.35);
+  box-shadow: 0 16px 32px -8px rgba(17, 57, 150, 0.12);
+  transform: translateY(-2px);
+}
+
+.dark .project-card-interactive:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 16px 32px -8px rgba(37, 99, 235, 0.2);
+}
+
+.project-title-interactive {
+  transition: color 0.2s ease;
+}
+
+.project-title-interactive:hover {
+  color: var(--tfn-blue);
+}
+
+.dark .project-title-interactive:hover {
+  color: var(--primary-color);
+}
+

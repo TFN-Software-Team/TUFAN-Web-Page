@@ -88,7 +88,12 @@ export default function App() {
         {isAdmin ? (
           <AdminDashboard />
         ) : (
-          <Sections onOpenAdminModal={openAdminModal} lang={lang} mediaRefreshKey={mediaRefreshKey} />
+          <Sections
+            onOpenAdminModal={openAdminModal}
+            onOpenApplicationModal={openApplicationModal}
+            lang={lang}
+            mediaRefreshKey={mediaRefreshKey}
+          />
         )}
       </main>
 

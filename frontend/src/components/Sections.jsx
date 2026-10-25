@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Users, ShieldCheck, Cpu, X, Calendar, Camera, Settings, Monitor, Megaphone, Wrench, Zap, BatteryCharging } from 'lucide-react';
+import {
+  Users, ShieldCheck, Cpu, X, Calendar, Camera, Settings,
+  Monitor, Megaphone, Wrench, Zap, BatteryCharging,
+  Trophy, CheckCircle2, Gauge, Layers, Sparkles, ChevronRight
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
 import MediaMarquee from './MediaMarquee';
@@ -16,14 +20,110 @@ const DEFAULT_FEATURE_CARDS_EN = [
   { id: 3, title: 'Competition & Performance', description: 'We compete with a podium goal at TEKNOFEST and the International Efficiency Challenge Electric Vehicle Races.' }
 ];
 
+const DEFAULT_PROJECTS_TR = [
+  {
+    id: 1,
+    title: 'TUFAN Elektromobil v1',
+    description: 'TEKNOFEST Efficiency Challenge için geliştirilen yüksek verimli, özel tasarım motor sürücüsü ve hafif karbon-fiber kompozit şasiye sahip elektrikli yarış aracı.',
+    category: 'Elektromobil & Efficiency Challenge',
+    status: 'Yarış Aracı',
+    badge: 'TEKNOFEST EC',
+    subsystems: ['Yerli Motor Sürücü', 'Özel BMS (Batarya Yönetim Sistemi)', 'Karbon Fiber Şasi', 'Telemetri & CAN-Bus'],
+    specs: [
+      { label: 'Azami Hız', value: '110 km/s' },
+      { label: 'Batarya Kapasitesi', value: '4.2 kWh Li-Ion' },
+      { label: 'Şasi Malzemesi', value: 'Karbon Fiber Kompozit' },
+      { label: 'Sürücü Verimi', value: '%94 Peak Verim' },
+      { label: 'Araç Ağırlığı', value: '170 kg' },
+      { label: 'Menzil', value: '80+ km' }
+    ],
+    highlights: [
+      'Tamamen takım bünyesinde tasarlanıp üretilen yerli FOC motor sürücü mimarisi.',
+      'Hücre bazında sıcaklık, gerilim ve akım denetimi sağlayan güvenli Batarya Yönetim Sistemi (BMS).',
+      'Havacılık standartlarında vakum infüzyon yöntemiyle üretilen hafif karbon fiber kompozit monokok şasi.',
+      'Yarış esnasında tüm kritik araç verilerini canlı olarak pit istasyonuna aktaran telemetri yazılımı.'
+    ]
+  },
+  {
+    id: 2,
+    title: 'TUFAN Otonom',
+    description: 'LiDAR, stereo kamera ve yapay zeka algoritmalarıyla donatılmış, sürücüsüz seyrüsefer kabiliyetine sahip yeni nesil elektrikli araç platformu.',
+    category: 'Otonom Araç & Robotaksi',
+    status: 'Geliştirme Aşamasında',
+    badge: 'Robotaksi Otonom',
+    subsystems: ['Sensör Füzyonu (LiDAR & Kamera)', 'Derin Öğrenme Şerit/Engel Tespiti', 'ROS 2 Haberleşme', 'Drive-by-Wire Elektronik Kontrol'],
+    specs: [
+      { label: 'İşlem Birimi', value: 'NVIDIA Jetson / Endüstriyel PC' },
+      { label: 'Algılama Menzili', value: '360° LiDAR + Stereo RGB' },
+      { label: 'Yazılım Mimarisi', value: 'ROS 2 Humble / C++ & Python' },
+      { label: 'Navigasyon', value: 'SLAM & Dinamik Engel Sakınma' },
+      { label: 'Aktüasyon', value: 'Drive-by-Wire Direksiyon & Fren' },
+      { label: 'Tepki Süresi', value: '< 40 ms' }
+    ],
+    highlights: [
+      'Gerçek zamanlı derin öğrenme tabanlı nesne tespiti, yaya algılama ve trafik işaretleri tanıma.',
+      'LiDAR nokta bulutu ile 3 boyutlu çevre haritalama ve anlık konumlandırma (SLAM).',
+      'Araç fren ve direksiyon mekanizmalarını bilgisayar kontrollü çalıştıran elektronik donanım arabirimi.',
+      'Donanımsal ve yazılımsal yedekli acil durum durdurma (E-Stop) güvenlik protokolü.'
+    ]
+  }
+];
 
+const DEFAULT_PROJECTS_EN = [
+  {
+    id: 1,
+    title: 'TUFAN Electric Vehicle v1',
+    description: 'High efficiency, custom-designed motor driver and lightweight carbon-fiber composite chassis electric race vehicle developed for TEKNOFEST Efficiency Challenge.',
+    category: 'Electric Vehicle & Efficiency Challenge',
+    status: 'Racing Vehicle',
+    badge: 'TEKNOFEST EC',
+    subsystems: ['In-house Motor Driver', 'Custom BMS (Battery Management System)', 'Carbon Fiber Chassis', 'Telemetry & CAN-Bus'],
+    specs: [
+      { label: 'Top Speed', value: '110 km/h' },
+      { label: 'Battery Capacity', value: '4.2 kWh Li-Ion' },
+      { label: 'Chassis Material', value: 'Carbon Fiber Composite' },
+      { label: 'Driver Efficiency', value: '94% Peak Efficiency' },
+      { label: 'Vehicle Weight', value: '170 kg' },
+      { label: 'Range', value: '80+ km' }
+    ],
+    highlights: [
+      'In-house designed and fabricated field-oriented control (FOC) motor driver architecture.',
+      'Cell-level thermal, voltage, and current monitoring battery management system (BMS).',
+      'Ultra-lightweight vacuum infusion carbon fiber composite monocoque chassis.',
+      'Wireless telemetry system streaming live diagnostics directly to the pit station.'
+    ]
+  },
+  {
+    id: 2,
+    title: 'TUFAN Autonomous',
+    description: 'Next-generation electric vehicle platform equipped with LiDAR, stereo camera, and deep learning algorithms capable of autonomous navigation.',
+    category: 'Autonomous Vehicle & Robotaxi',
+    status: 'In Active Development',
+    badge: 'Robotaksi Autonomous',
+    subsystems: ['Sensor Fusion (LiDAR & Camera)', 'Deep Learning Lane/Obstacle Detection', 'ROS 2 Framework', 'Drive-by-Wire Electronic Control'],
+    specs: [
+      { label: 'Compute Unit', value: 'NVIDIA Jetson / Industrial PC' },
+      { label: 'Detection Range', value: '360° LiDAR + Stereo RGB' },
+      { label: 'Software Stack', value: 'ROS 2 Humble / C++ & Python' },
+      { label: 'Navigation', value: 'SLAM & Dynamic Obstacle Avoidance' },
+      { label: 'Actuation', value: 'Drive-by-Wire Steering & Braking' },
+      { label: 'Response Time', value: '< 40 ms' }
+    ],
+    highlights: [
+      'Real-time deep learning computer vision for object detection, pedestrians, and road signs.',
+      '3D LiDAR point cloud processing for SLAM (Simultaneous Localization and Mapping).',
+      'Custom drive-by-wire electronic interface for steering and brake actuation.',
+      'Hardware and software fail-safe emergency stop (E-Stop) protocol.'
+    ]
+  }
+];
 
 const DEFAULT_SOCIAL_LINKS = {
   instagram: 'https://www.instagram.com/tufanelektromobil?igsh=bW0zemZ0YW9tNXM2',
   linkedin: 'https://www.linkedin.com/company/akdeniz-tufan-elektromobil/'
 };
 
-export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }) {
+export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lang, mediaRefreshKey = 0 }) {
   const [siteText, setSiteText] = useState('');
   const [heroTitle1, setHeroTitle1] = useState('');
   const [heroTitle2, setHeroTitle2] = useState('');
@@ -32,6 +132,7 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
   const [socialLinks, setSocialLinks] = useState(DEFAULT_SOCIAL_LINKS);
   const [featureCards, setFeatureCards] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const t = {
     teamLabel: lang === 'tr' ? 'TUFAN ELEKTROMOBİL TAKIMI' : 'TUFAN ELECTRIC VEHICLE TEAM',
@@ -43,6 +144,11 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
     projectsTitle: lang === 'tr' ? 'Projelerimiz' : 'Our Projects',
     noProjects: lang === 'tr' ? 'Henüz eklenmiş bir proje bulunmamaktadır.' : 'No projects have been added yet.',
     viewDetails: lang === 'tr' ? 'Detayları İncele' : 'View Details',
+    projectDetailsTitle: lang === 'tr' ? 'Proje Detayları' : 'Project Details',
+    techSpecs: lang === 'tr' ? 'Teknik Özellikler' : 'Technical Specifications',
+    subsystems: lang === 'tr' ? 'Geliştirilen Alt Sistemler' : 'Developed Subsystems',
+    highlights: lang === 'tr' ? 'Öne Çıkan Mühendislik Başarıları' : 'Key Engineering Highlights',
+    applyForProject: lang === 'tr' ? 'Takıma Katıl / Başvuru Yap' : 'Join the Team / Apply',
     mediaTitle: lang === 'tr' ? 'Medya & Etkinlikler' : 'Media & Events',
     noMedia: lang === 'tr' ? 'Henüz medya öğesi bulunmamaktadır.' : 'No media items available yet.',
     dragHint: lang === 'tr' ? 'Sürükleyerek inceleyin' : 'Drag to explore',
@@ -149,15 +255,20 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedMedia(null);
+        setSelectedProject(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const PROJECT_TRANSLATIONS_EN = {
-    'TUFAN Elektromobil v1': {
-      title: 'TUFAN Electric Vehicle v1',
-      description: 'High efficiency, custom-designed motor driver and lightweight carbon-fiber composite chassis electric race vehicle developed for TEKNOFEST.'
-    },
-    'TUFAN Otonom': {
-      title: 'TUFAN Autonomous',
-      description: 'Next-generation electric vehicle platform equipped with LiDAR, camera, and deep learning algorithms capable of autonomous navigation.'
-    }
+    'TUFAN Elektromobil v1': DEFAULT_PROJECTS_EN[0],
+    'TUFAN Otonom': DEFAULT_PROJECTS_EN[1]
   };
 
   const translateDate = (dateStr) => {
@@ -189,11 +300,36 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
     return item;
   });
 
-  const displayProjects = projects.map(proj => {
+  const rawProjects = (projects && projects.length > 0)
+    ? projects
+    : (lang === 'en' ? DEFAULT_PROJECTS_EN : DEFAULT_PROJECTS_TR);
+
+  const displayProjects = rawProjects.map(proj => {
+    const defaultList = lang === 'en' ? DEFAULT_PROJECTS_EN : DEFAULT_PROJECTS_TR;
+    let enriched = { ...proj };
+
     if (lang === 'en' && PROJECT_TRANSLATIONS_EN[proj.title]) {
-      return { ...proj, ...PROJECT_TRANSLATIONS_EN[proj.title] };
+      enriched = { ...enriched, ...PROJECT_TRANSLATIONS_EN[proj.title] };
     }
-    return proj;
+
+    const match = defaultList.find(d =>
+      (d.title && proj.title && d.title.toLowerCase() === proj.title.toLowerCase()) ||
+      d.id === proj.id
+    );
+
+    if (match) {
+      enriched = {
+        ...match,
+        ...enriched,
+        specs: match.specs,
+        subsystems: match.subsystems,
+        highlights: match.highlights,
+        badge: enriched.badge || match.badge,
+        category: enriched.category || match.category,
+        status: enriched.status || match.status
+      };
+    }
+    return enriched;
   });
 
   const getIconForFeature = (title, index) => {
@@ -279,16 +415,66 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
             <p style={{ color: 'var(--text-secondary)' }}>{t.noProjects}</p>
           ) : (
             displayProjects.map((project, index) => (
-              <div key={project.id} className="premium-card" style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', padding: 'clamp(1.25rem, 3vw, 3rem)' }}>
+              <div
+                key={project.id || index}
+                className="premium-card project-card-interactive"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '1.5rem',
+                  alignItems: 'center',
+                  padding: 'clamp(1.25rem, 3vw, 3rem)'
+                }}
+              >
                 <div style={{ flex: '0 0 auto', padding: '1.25rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <img src="/teknofest.webp" alt="Teknofest Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', filter: 'grayscale(100%) contrast(1.2) opacity(0.85)' }} />
                 </div>
                 <div style={{ flex: '1 1 200px' }}>
-                  <h3 style={{ fontSize: 'clamp(1.1rem, 3vw, 1.5rem)', margin: '0 0 0.5rem 0' }}>{project.title}</h3>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '1rem', maxWidth: '600px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                    <h3
+                      className="project-title-interactive"
+                      onClick={() => setSelectedProject(project)}
+                      style={{
+                        fontSize: 'clamp(1.1rem, 3vw, 1.5rem)',
+                        margin: 0,
+                        cursor: 'pointer'
+                      }}
+                      title={t.viewDetails}
+                    >
+                      {project.title}
+                    </h3>
+                    {project.badge && (
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: '700',
+                        color: 'var(--tfn-blue)',
+                        backgroundColor: 'rgba(17, 57, 150, 0.08)',
+                        padding: '0.2rem 0.65rem',
+                        borderRadius: '999px',
+                        border: '1px solid rgba(17, 57, 150, 0.15)'
+                      }}>
+                        {project.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '1rem', maxWidth: '650px', lineHeight: '1.6' }}>
                     {project.description}
                   </p>
-                  <button className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>{t.viewDetails}</button>
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => setSelectedProject(project)}
+                    style={{
+                      fontSize: '0.85rem',
+                      padding: '0.55rem 1.25rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <span>{t.viewDetails}</span>
+                    <ChevronRight size={15} />
+                  </button>
                 </div>
               </div>
             ))
@@ -382,6 +568,296 @@ export default function Sections({ onOpenAdminModal, lang, mediaRefreshKey = 0 }
             <button className="btn btn-outline" onClick={() => setSelectedMedia(null)} style={{ width: '100%' }}>
               {t.close}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Project Detail Modal */}
+      {selectedProject && (
+        <div className="modal-overlay active" onClick={() => setSelectedProject(null)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '740px',
+              padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            <button
+              className="modal-close"
+              onClick={() => setSelectedProject(null)}
+              aria-label={t.close}
+            >
+              <X size={24} />
+            </button>
+
+            {/* Top Badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontSize: '0.8rem',
+                color: 'var(--tfn-blue)',
+                fontWeight: '700',
+                backgroundColor: 'rgba(17, 57, 150, 0.1)',
+                padding: '0.35rem 0.85rem',
+                borderRadius: '999px',
+                border: '1px solid rgba(17, 57, 150, 0.2)'
+              }}>
+                <Trophy size={14} />
+                {selectedProject.badge || (lang === 'tr' ? 'TEKNOFEST Projesi' : 'TEKNOFEST Project')}
+              </span>
+
+              {selectedProject.category && (
+                <span style={{
+                  fontSize: '0.8rem',
+                  color: 'var(--text-secondary)',
+                  backgroundColor: 'var(--bg-secondary)',
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '999px',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  {selectedProject.category}
+                </span>
+              )}
+
+              {selectedProject.status && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.8rem',
+                  color: 'var(--tfn-orange)',
+                  fontWeight: '600',
+                  backgroundColor: 'rgba(255, 100, 10, 0.1)',
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '999px'
+                }}>
+                  <Sparkles size={13} />
+                  {selectedProject.status}
+                </span>
+              )}
+            </div>
+
+            {/* Project Title */}
+            <h2 style={{
+              fontSize: 'clamp(1.5rem, 3.5vw, 2.2rem)',
+              fontWeight: '800',
+              lineHeight: '1.2',
+              marginBottom: '1.25rem',
+              color: 'var(--text-primary)'
+            }}>
+              {selectedProject.title}
+            </h2>
+
+            {/* Banner card */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(17, 57, 150, 0.08) 0%, rgba(255, 100, 10, 0.06) 100%)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '1.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.25rem',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '14px',
+                backgroundColor: 'var(--bg-color)',
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: 'var(--shadow-sm)'
+              }}>
+                <img
+                  src="/teknofest.webp"
+                  alt="Teknofest"
+                  style={{ width: '36px', height: '36px', objectFit: 'contain' }}
+                />
+              </div>
+              <div style={{ flex: '1 1 220px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--tfn-blue)', marginBottom: '0.2rem' }}>
+                  Akdeniz Üniversitesi TUFAN Takımı
+                </div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  {lang === 'tr'
+                    ? 'Yerli ve milli imkanlarla geliştirilen yüksek teknolojili mühendislik aracı.'
+                    : 'High-tech engineering vehicle developed with domestic and national capabilities.'}
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{
+                color: 'var(--text-primary)',
+                fontSize: '1rem',
+                lineHeight: '1.8'
+              }} className="markdown-content">
+                <ReactMarkdown>{selectedProject.description}</ReactMarkdown>
+              </div>
+            </div>
+
+            {/* Technical Specifications */}
+            {selectedProject.specs && selectedProject.specs.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'var(--text-primary)',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <Gauge size={17} color="var(--tfn-blue)" />
+                  {t.techSpecs}
+                </h4>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '0.75rem'
+                }}>
+                  {selectedProject.specs.map((spec, sIdx) => (
+                    <div
+                      key={sIdx}
+                      style={{
+                        padding: '0.85rem 1rem',
+                        backgroundColor: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.2rem'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {spec.label}
+                      </span>
+                      <span style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        {spec.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Subsystems */}
+            {selectedProject.subsystems && selectedProject.subsystems.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'var(--text-primary)',
+                  marginBottom: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <Layers size={17} color="var(--tfn-blue)" />
+                  {t.subsystems}
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {selectedProject.subsystems.map((sub, subIdx) => (
+                    <span
+                      key={subIdx}
+                      style={{
+                        fontSize: '0.85rem',
+                        fontWeight: '500',
+                        color: 'var(--text-primary)',
+                        backgroundColor: 'var(--bg-secondary)',
+                        padding: '0.4rem 0.85rem',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border-color)'
+                      }}
+                    >
+                      {sub}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Highlights */}
+            {selectedProject.highlights && selectedProject.highlights.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <h4 style={{
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'var(--text-primary)',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <CheckCircle2 size={17} color="var(--tfn-blue)" />
+                  {t.highlights}
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  {selectedProject.highlights.map((hl, hlIdx) => (
+                    <div
+                      key={hlIdx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.65rem',
+                        fontSize: '0.95rem',
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.6'
+                      }}
+                    >
+                      <CheckCircle2 size={16} color="var(--tfn-orange)" style={{ flexShrink: 0, marginTop: '0.25rem' }} />
+                      <span>{hl}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+              {onOpenApplicationModal && (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setSelectedProject(null);
+                    onOpenApplicationModal();
+                  }}
+                  style={{
+                    flex: '1 1 220px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <Users size={16} />
+                  <span>{t.applyForProject}</span>
+                </button>
+              )}
+              <button
+                className="btn btn-outline"
+                onClick={() => setSelectedProject(null)}
+                style={{ flex: onOpenApplicationModal ? '0 1 120px' : '1 1 100%' }}
+              >
+                {t.close}
+              </button>
+            </div>
           </div>
         </div>
       )}
