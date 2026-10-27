@@ -978,9 +978,42 @@ export default function AdminDashboard() {
   };
 
   const handleSelectApplication = (app) => {
+    window.history.pushState({ adminApp: app.id }, '', `#admin-app-${app.id}`);
     setSelectedApplication(app);
     setAdminNote(app.admin_note || '');
   };
+
+  const handleCloseApplication = () => {
+    if (window.location.hash.startsWith('#admin-app-')) {
+      window.history.back();
+    } else {
+      setSelectedApplication(null);
+    }
+  };
+
+  // Sync selected application with browser history stack
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#admin-app-')) {
+        const appId = hash.replace('#admin-app-', '');
+        const found = applications.find(a => String(a.id) === appId);
+        if (found) {
+          setSelectedApplication(found);
+          setAdminNote(found.admin_note || '');
+        }
+      } else {
+        setSelectedApplication(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, [applications]);
 
   const handleSaveAdminNote = async () => {
     if (!selectedApplication) return;
@@ -1511,7 +1544,7 @@ export default function AdminDashboard() {
               // DETAILED VIEW
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <button onClick={() => setSelectedApplication(null)} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
+                  <button onClick={handleCloseApplication} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
                     <ChevronLeft size={16} /> Geri Dön
                   </button>
                   

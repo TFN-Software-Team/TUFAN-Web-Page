@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Lock } from 'lucide-react';
+import { X, Lock, ArrowLeft } from 'lucide-react';
 import API_BASE from '../config';
 
 const CLASS_OPTIONS = ['Hazırlık', '1', '2', '3', '4', '5', '6', 'Yüksek Lisans', 'Diğer'];
@@ -24,6 +24,7 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
       ? 'TUFAN Elektromobil takımı yeni dönem başvuruları şu anda kapalıdır. Gelişmeler için bizi takip etmeye devam edin.'
       : 'TUFAN Electric Vehicle Team applications for the new term are currently closed. Stay tuned for updates.',
     close: lang === 'tr' ? 'Kapat' : 'Close',
+    back: lang === 'tr' ? 'Geri Dön' : 'Back',
 
     // Form fields
     firstName: lang === 'tr' ? 'Adınız' : 'First Name',
@@ -289,9 +290,34 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
         onClick={(e) => e.stopPropagation()}
         style={activeModal === 'application' ? { maxWidth: '800px' } : { maxWidth: '400px' }}
       >
-        <button className="modal-close" onClick={onClose}>
-          <X size={24} />
-        </button>
+        {/* Top Navigation Bar with Back Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={onClose}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.35rem 0.85rem',
+              fontSize: '0.85rem',
+              borderRadius: '999px'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>{t.back}</span>
+          </button>
+          <button
+            type="button"
+            className="modal-close"
+            style={{ position: 'static' }}
+            onClick={onClose}
+            aria-label={t.close}
+          >
+            <X size={22} />
+          </button>
+        </div>
 
         {activeModal === 'admin' && (
           <div className="animate-fade-in">

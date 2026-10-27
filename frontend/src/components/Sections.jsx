@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, ShieldCheck, Cpu, X, Calendar, Camera, Settings,
   Monitor, Megaphone, Wrench, Zap, BatteryCharging,
-  Trophy, CheckCircle2, Gauge, Layers, Sparkles, ChevronRight
+  Trophy, CheckCircle2, Gauge, Layers, Sparkles, ChevronRight, ArrowLeft
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
@@ -154,6 +154,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
     dragHint: lang === 'tr' ? 'Sürükleyerek inceleyin' : 'Drag to explore',
     noDescription: lang === 'tr' ? 'Bu etkinlik hakkında henüz ayrıntılı bir açıklama eklenmemiş.' : 'No detailed description has been added for this event yet.',
     close: lang === 'tr' ? 'Kapat' : 'Close',
+    back: lang === 'tr' ? 'Geri Dön' : 'Back',
     rights: lang === 'tr' ? '© TUFAN Elektromobil Takımı. Tüm hakları saklıdır.' : '© TUFAN Electric Vehicle Team. All rights reserved.',
     adminLogin: lang === 'tr' ? 'Yönetici Girişi' : 'Admin Login',
     explore: lang === 'tr' ? 'İncele' : 'Explore',
@@ -332,6 +333,114 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
     return enriched;
   });
 
+  // Stack-based History Navigation Handlers
+  const openProject = (project) => {
+    sessionStorage.setItem('scroll_before_modal', window.scrollY.toString());
+    if (!window.location.hash || window.location.hash === '#' || window.location.hash === '#about') {
+      window.history.replaceState({ section: 'projects' }, '', '#projects');
+    }
+    window.history.pushState({ modal: 'project', id: project.id }, '', `#project-${project.id}`);
+    setSelectedProject(project);
+  };
+
+  const closeProject = () => {
+    if (window.location.hash.startsWith('#project-')) {
+      window.history.back();
+    } else {
+      setSelectedProject(null);
+    }
+  };
+
+  const openMedia = (item) => {
+    sessionStorage.setItem('scroll_before_modal', window.scrollY.toString());
+    if (!window.location.hash || window.location.hash === '#' || window.location.hash === '#about') {
+      window.history.replaceState({ section: 'media' }, '', '#media');
+    }
+    window.history.pushState({ modal: 'media', id: item.id }, '', `#media-${item.id}`);
+    setSelectedMedia(item);
+  };
+
+  const closeMedia = () => {
+    if (window.location.hash.startsWith('#media-')) {
+      window.history.back();
+    } else {
+      setSelectedMedia(null);
+    }
+  };
+
+  // Synchronize Project and Media modals with browser history stack
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+
+      // Handle Project modal from hash
+      if (hash.startsWith('#project-')) {
+        const projId = hash.replace('#project-', '');
+        const found = displayProjects.find(p => String(p.id) === projId || (p.title && p.title.toLowerCase().replace(/\\s+/g, '-') === projId));
+        if (found) {
+          setSelectedProject(found);
+        }
+      } else {
+        setSelectedProject(null);
+      }
+
+      // Handle Media modal from hash
+      if (hash.startsWith('#media-')) {
+        const mediaId = hash.replace('#media-', '');
+        const found = displayMediaItems.find(m => String(m.id) === mediaId);
+        if (found) {
+          setSelectedMedia(found);
+        }
+      } else {
+        setSelectedMedia(null);
+      }
+
+      // Scroll position restoration when returning to sections
+      if (hash === '#projects' || hash === '#media') {
+        const savedScroll = sessionStorage.getItem('scroll_before_modal');
+        if (savedScroll) {
+          window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'smooth' });
+          sessionStorage.removeItem('scroll_before_modal');
+        } else {
+          const el = document.getElementById(hash.substring(1));
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else if (hash === '#about' || hash === '' || hash === '#') {
+        sessionStorage.removeItem('scroll_before_modal');
+        const el = document.getElementById('about');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    };
+
+    // Check initial hash on load
+    if (window.location.hash.startsWith('#project-') || window.location.hash.startsWith('#media-')) {
+      handlePopState();
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, [displayProjects, displayMediaItems]);
+
+  // Close modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (selectedProject) closeProject();
+        if (selectedMedia) closeMedia();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedProject, selectedMedia]);
+
   const getIconForFeature = (title, index) => {
     const fallbackIcons = [Users, Cpu, ShieldCheck];
     if (!title) {
@@ -433,7 +542,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
                     <h3
                       className="project-title-interactive"
-                      onClick={() => setSelectedProject(project)}
+                      onClick={() => openProject(project)}
                       style={{
                         fontSize: 'clamp(1.1rem, 3vw, 1.5rem)',
                         margin: 0,
@@ -462,7 +571,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                   </p>
                   <button
                     className="btn btn-outline"
-                    onClick={() => setSelectedProject(project)}
+                    onClick={() => openProject(project)}
                     style={{
                       fontSize: '0.85rem',
                       padding: '0.55rem 1.25rem',
@@ -491,7 +600,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
         ) : (
           <MediaMarquee
             items={displayMediaItems}
-            onSelectMedia={(item) => setSelectedMedia(item)}
+            onSelectMedia={(item) => openMedia(item)}
             dragHint={t.dragHint}
             lang={lang}
           />
@@ -500,15 +609,40 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
 
       {/* Media Item Detail Modal */}
       {selectedMedia && (
-        <div className="modal-overlay active" onClick={() => setSelectedMedia(null)}>
+        <div className="modal-overlay active" onClick={closeMedia}>
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '650px', padding: '2rem' }}
           >
-            <button className="modal-close" onClick={() => setSelectedMedia(null)}>
-              <X size={24} />
-            </button>
+            {/* Top Navigation Bar with Back Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={closeMedia}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.35rem 0.85rem',
+                  fontSize: '0.85rem',
+                  borderRadius: '999px'
+                }}
+              >
+                <ArrowLeft size={16} />
+                <span>{t.back}</span>
+              </button>
+              <button
+                type="button"
+                className="modal-close"
+                style={{ position: 'static' }}
+                onClick={closeMedia}
+                aria-label={t.close}
+              >
+                <X size={22} />
+              </button>
+            </div>
 
             {/* Image display */}
             <div style={{
@@ -565,8 +699,13 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
               {selectedMedia.description || t.noDescription}
             </div>
 
-            <button className="btn btn-outline" onClick={() => setSelectedMedia(null)} style={{ width: '100%' }}>
-              {t.close}
+            <button
+              className="btn btn-outline"
+              onClick={closeMedia}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+            >
+              <ArrowLeft size={16} />
+              <span>{t.back}</span>
             </button>
           </div>
         </div>
@@ -574,7 +713,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
 
       {/* Project Detail Modal */}
       {selectedProject && (
-        <div className="modal-overlay active" onClick={() => setSelectedProject(null)}>
+        <div className="modal-overlay active" onClick={closeProject}>
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
@@ -585,13 +724,34 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
               overflowY: 'auto'
             }}
           >
-            <button
-              className="modal-close"
-              onClick={() => setSelectedProject(null)}
-              aria-label={t.close}
-            >
-              <X size={24} />
-            </button>
+            {/* Top Navigation Bar with Back Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={closeProject}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.35rem 0.85rem',
+                  fontSize: '0.85rem',
+                  borderRadius: '999px'
+                }}
+              >
+                <ArrowLeft size={16} />
+                <span>{t.back}</span>
+              </button>
+              <button
+                type="button"
+                className="modal-close"
+                style={{ position: 'static' }}
+                onClick={closeProject}
+                aria-label={t.close}
+              >
+                <X size={22} />
+              </button>
+            </div>
 
             {/* Top Badges */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -835,7 +995,6 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                 <button
                   className="btn btn-primary"
                   onClick={() => {
-                    setSelectedProject(null);
                     onOpenApplicationModal();
                   }}
                   style={{
@@ -852,10 +1011,17 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
               )}
               <button
                 className="btn btn-outline"
-                onClick={() => setSelectedProject(null)}
-                style={{ flex: onOpenApplicationModal ? '0 1 120px' : '1 1 100%' }}
+                onClick={closeProject}
+                style={{
+                  flex: onOpenApplicationModal ? '0 1 140px' : '1 1 100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem'
+                }}
               >
-                {t.close}
+                <ArrowLeft size={16} />
+                <span>{t.back}</span>
               </button>
             </div>
           </div>

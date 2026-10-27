@@ -122,9 +122,15 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <a
-              href="#"
+              href="#about"
               className="nav-logo"
-              onClick={() => { closeMobile(); }}
+              onClick={(e) => {
+                closeMobile();
+                if (window.location.hash === '#about' || !window.location.hash) {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
               style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
             >
               <img
