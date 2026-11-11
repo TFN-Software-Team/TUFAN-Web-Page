@@ -10,6 +10,8 @@ class LoginResponse(BaseModel):
     success: bool
     token: Optional[str] = None
     message: str
+    locked: Optional[bool] = False
+    remaining_seconds: Optional[int] = 0
 
 # Temel proje özellikleri
 class ProjectBase(BaseModel):

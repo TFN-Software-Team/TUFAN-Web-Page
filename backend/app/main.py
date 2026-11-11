@@ -1,5 +1,6 @@
 import os
 import secrets
+import time
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -47,24 +48,91 @@ app.add_middleware(
 # Aktif oturum token'ları
 VALID_TOKENS = set()
 
+# Brute-force saldırı koruması (IP bazlı deneme takibi ve kilitleme)
+LOGIN_ATTEMPTS = {}
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_DURATION_SECONDS = 15 * 60  # 15 dakika
+
 # Health check endpoint — Cron job ve uptime monitor için
 @app.get("/health")
 @app.get("/health/")
 def health_check():
     return {"status": "ok"}
 
-# Admin Login Endpoint (Dakikada maks 10 deneme)
+# Admin Login Endpoint (Brute-force korumalı: Maks 5 deneme, ardından 15 dk IP kilidi)
 @app.post("/login", response_model=schemas.LoginResponse)
 @app.post("/login/", response_model=schemas.LoginResponse)
-@limiter.limit("10/minute")
+@limiter.limit("20/minute")
 def login(request: Request, req: schemas.LoginRequest):
+    # İstemci IP adresini al
+    client_ip = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        client_ip = forwarded.split(",")[0].strip()
+
+    now = time.time()
+    ip_data = LOGIN_ATTEMPTS.get(client_ip)
+
+    # 1. Kilitli mi kontrol et
+    if ip_data:
+        lock_until = ip_data.get("lockout_until", 0)
+        if lock_until > now:
+            remaining_seconds = int(lock_until - now)
+            remaining_minutes = max(1, (remaining_seconds + 59) // 60)
+            return {
+                "success": False,
+                "token": None,
+                "locked": True,
+                "remaining_seconds": remaining_seconds,
+                "message": f"Çok fazla hatalı deneme yaptınız. Güvenlik nedeniyle girişiniz {remaining_minutes} dakika boyunca kilitlendi."
+            }
+        # Kilit süresi dolmuşsa ve son denemenin üzerinden 1 saat geçtiyse sıfırla
+        if now - ip_data.get("last_attempt", 0) > 3600:
+            LOGIN_ATTEMPTS.pop(client_ip, None)
+            ip_data = None
+
     expected_user = os.getenv("ADMIN_USERNAME", "admin")
     expected_pass = os.getenv("ADMIN_PASSWORD", "admin")
+
+    # 2. Doğrulama başarılı mı?
     if req.username == expected_user and req.password == expected_pass:
+        LOGIN_ATTEMPTS.pop(client_ip, None)
         token = secrets.token_hex(16)
         VALID_TOKENS.add(token)
-        return {"success": True, "token": token, "message": "Giriş başarılı"}
-    return {"success": False, "token": None, "message": "Kullanıcı adı veya şifre hatalı"}
+        return {
+            "success": True,
+            "token": token,
+            "locked": False,
+            "remaining_seconds": 0,
+            "message": "Giriş başarılı"
+        }
+
+    # 3. Hatalı deneme kaydı
+    if not ip_data:
+        ip_data = {"attempts": 1, "lockout_until": 0, "last_attempt": now}
+        LOGIN_ATTEMPTS[client_ip] = ip_data
+    else:
+        ip_data["attempts"] = ip_data.get("attempts", 0) + 1
+        ip_data["last_attempt"] = now
+
+    remaining = MAX_LOGIN_ATTEMPTS - ip_data["attempts"]
+    if remaining <= 0:
+        ip_data["lockout_until"] = now + LOCKOUT_DURATION_SECONDS
+        return {
+            "success": False,
+            "token": None,
+            "locked": True,
+            "remaining_seconds": LOCKOUT_DURATION_SECONDS,
+            "message": f"5 kez hatalı giriş yapıldı. Güvenlik nedeniyle {LOCKOUT_DURATION_SECONDS // 60} dakika boyunca kilitlendiniz."
+        }
+
+    return {
+        "success": False,
+        "token": None,
+        "locked": False,
+        "remaining_seconds": 0,
+        "message": f"Hatalı kullanıcı adı veya şifre! Kalan deneme hakkı: {remaining}"
+    }
 
 # Token Doğrulama Endpoint
 @app.get("/verify-token")

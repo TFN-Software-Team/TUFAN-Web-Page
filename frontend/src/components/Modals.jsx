@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Lock, ArrowLeft } from 'lucide-react';
 import API_BASE from '../config';
 
@@ -64,6 +64,30 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
     errTeam: lang === 'tr' ? 'Ekip seçimi gereklidir.' : 'Team selection is required.',
     errRequired: lang === 'tr' ? 'Bu alan zorunludur.' : 'This field is required.',
   };
+
+  // --- Brute-force koruma state'leri ---
+  const [loginLocked, setLoginLocked] = useState(false);
+  const [lockCountdown, setLockCountdown] = useState(0);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const countdownRef = useRef(null);
+
+  // Kilit geri sayım
+  useEffect(() => {
+    if (loginLocked && lockCountdown > 0) {
+      countdownRef.current = setInterval(() => {
+        setLockCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownRef.current);
+            setLoginLocked(false);
+            setLoginAttempts(0);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(countdownRef.current);
+  }, [loginLocked]);
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -250,6 +274,10 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
 
   const handleAdminSubmit = async (e) => {
     e.preventDefault();
+
+    // Zaten kilitliyse gönderme
+    if (loginLocked) return;
+
     const username = e.target.username.value;
     const password = e.target.password.value;
 
@@ -260,19 +288,46 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();
+
+      if (data.locked) {
+        // Sunucu tarafı kilit
+        const remaining = data.remaining_seconds || 15 * 60;
+        setLoginLocked(true);
+        setLockCountdown(remaining);
+        setLoginAttempts(5);
+        return;
+      }
+
       if (res.ok && data.success) {
         if (data.token) {
           localStorage.setItem('admin_token', data.token);
         }
+        setLoginAttempts(0);
         if (onLoginSuccess) onLoginSuccess();
       } else {
-        alert(data.message || t.wrongCredentials);
+        // Hatalı deneme sayısını artır
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+        if (newAttempts >= 5) {
+          setLoginLocked(true);
+          setLockCountdown(15 * 60);
+        }
+        // Mesajı backend'den ya da varsayılandan al
+        const msg = data.message || t.wrongCredentials;
+        alert(msg);
       }
     } catch (err) {
       console.error('Login backend error, fallback check:', err);
       if (username === 'admin' && password === 'admin') {
+        setLoginAttempts(0);
         if (onLoginSuccess) onLoginSuccess();
       } else {
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+        if (newAttempts >= 5) {
+          setLoginLocked(true);
+          setLockCountdown(15 * 60);
+        }
         alert(t.wrongCredentials);
       }
     }
@@ -322,17 +377,63 @@ export default function Modals({ activeModal, onClose, onLoginSuccess, lang }) {
         {activeModal === 'admin' && (
           <div className="animate-fade-in">
             <h2 className="section-title" style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}>{t.adminTitle}</h2>
+
+            {/* Kilit uyarısı */}
+            {loginLocked && (
+              <div style={{
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.4)',
+                borderRadius: '0.75rem',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+              }}>
+                <Lock size={20} style={{ color: '#ef4444', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#ef4444', fontSize: '0.9rem' }}>
+                    {lang === 'tr' ? 'Hesap Geçici Olarak Kilitlendi' : 'Account Temporarily Locked'}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    {lang === 'tr'
+                      ? `Çok fazla hatalı deneme. ${Math.floor(lockCountdown / 60)}:${String(lockCountdown % 60).padStart(2, '0')} sonra tekrar deneyin.`
+                      : `Too many failed attempts. Try again in ${Math.floor(lockCountdown / 60)}:${String(lockCountdown % 60).padStart(2, '0')}.`}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Kalan deneme uyarısı (kilitli değilse, en az 1 hatalı deneme varsa) */}
+            {!loginLocked && loginAttempts > 0 && (
+              <div style={{
+                background: 'rgba(234,179,8,0.1)',
+                border: '1px solid rgba(234,179,8,0.35)',
+                borderRadius: '0.6rem',
+                padding: '0.6rem 1rem',
+                marginBottom: '1rem',
+                fontSize: '0.82rem',
+                color: '#ca8a04'
+              }}>
+                {lang === 'tr'
+                  ? `⚠ ${5 - loginAttempts} deneme hakkınız kaldı.`
+                  : `⚠ ${5 - loginAttempts} attempt(s) remaining.`}
+              </div>
+            )}
+
             <form onSubmit={handleAdminSubmit}>
               <div className="form-group">
                 <label className="form-label">{t.username}</label>
-                <input type="text" name="username" className="form-input" required />
+                <input type="text" name="username" className="form-input" required disabled={loginLocked} />
               </div>
               <div className="form-group">
                 <label className="form-label">{t.password}</label>
-                <input type="password" name="password" className="form-input" required />
+                <input type="password" name="password" className="form-input" required disabled={loginLocked} />
               </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
-                {t.loginBtn}
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', opacity: loginLocked ? 0.5 : 1 }} disabled={loginLocked}>
+                {loginLocked
+                  ? (lang === 'tr' ? `Kilitli (${Math.floor(lockCountdown / 60)}:${String(lockCountdown % 60).padStart(2, '0')})` : `Locked (${Math.floor(lockCountdown / 60)}:${String(lockCountdown % 60).padStart(2, '0')})`)
+                  : t.loginBtn}
               </button>
             </form>
           </div>
