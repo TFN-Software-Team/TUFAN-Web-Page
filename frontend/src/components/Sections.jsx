@@ -7,6 +7,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
 import MediaMarquee from './MediaMarquee';
+import { translateToEn, getCachedTranslation, translateDate } from '../utils/translator';
 
 const DEFAULT_FEATURE_CARDS_TR = [
   { id: 1, title: 'Disiplinler Arası Ekip Çalışması', description: 'Mühendislik, yazılım ve tasarım alanlarında yetkin öğrencilerle geleceğin araçlarını tasarlıyoruz.' },
@@ -267,36 +268,127 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const [liveTranslations, setLiveTranslations] = useState({
+    hero1: '',
+    hero2: '',
+    about: '',
+    featureCards: {},
+    projects: {},
+    media: {}
+  });
+
+  // Admin metinleri değiştirdiğinde İngilizce çevirisini canlı ve otomatik güncelle
+  useEffect(() => {
+    if (lang !== 'en') return;
+
+    let isMounted = true;
+
+    async function runAutoTranslations() {
+      const rawHero1 = heroTitle1 || t.hero1Default;
+      const rawHero2 = heroTitle2 || t.hero2Default;
+      const rawAbout = siteText || t.aboutDefault;
+
+      const p1 = translateToEn(rawHero1);
+      const p2 = translateToEn(rawHero2);
+      const pAbout = translateToEn(rawAbout);
+
+      const rawCards = featureCards && featureCards.length > 0 ? featureCards : DEFAULT_FEATURE_CARDS_TR;
+      const cardPromises = rawCards.map(async (card) => {
+        const titleEn = await translateToEn(card.title);
+        const descEn = await translateToEn(card.description);
+        return { id: card.id, titleEn, descEn };
+      });
+
+      const rawProj = projects && projects.length > 0 ? projects : DEFAULT_PROJECTS_TR;
+      const projPromises = rawProj.map(async (proj) => {
+        const titleEn = await translateToEn(proj.title);
+        const descEn = await translateToEn(proj.description);
+        return { id: proj.id, titleEn, descEn };
+      });
+
+      const mediaPromises = mediaItems.map(async (item) => {
+        const titleEn = await translateToEn(item.title);
+        const descEn = await translateToEn(item.description);
+        return { id: item.id, titleEn, descEn };
+      });
+
+      try {
+        const [h1, h2, ab, cards, projs, meds] = await Promise.all([
+          p1, p2, pAbout,
+          Promise.all(cardPromises),
+          Promise.all(projPromises),
+          Promise.all(mediaPromises)
+        ]);
+
+        if (!isMounted) return;
+
+        const fcMap = {};
+        cards.forEach(c => { fcMap[c.id] = c; });
+
+        const prMap = {};
+        projs.forEach(p => { prMap[p.id] = p; });
+
+        const mdMap = {};
+        meds.forEach(m => { mdMap[m.id] = m; });
+
+        setLiveTranslations({
+          hero1: h1,
+          hero2: h2,
+          about: ab,
+          featureCards: fcMap,
+          projects: prMap,
+          media: mdMap
+        });
+      } catch (err) {
+        console.warn('Live translation error:', err);
+      }
+    }
+
+    runAutoTranslations();
+
+    return () => { isMounted = false; };
+  }, [lang, heroTitle1, heroTitle2, siteText, featureCards, projects, mediaItems]);
+
   const PROJECT_TRANSLATIONS_EN = {
     'TUFAN Elektromobil v1': DEFAULT_PROJECTS_EN[0],
     'TUFAN Otonom': DEFAULT_PROJECTS_EN[1]
   };
 
-  const translateDate = (dateStr) => {
-    if (!dateStr || lang !== 'en') return dateStr;
-    const months = {
-      'Ocak': 'January', 'Şubat': 'February', 'Mart': 'March', 'Nisan': 'April',
-      'Mayıs': 'May', 'Haziran': 'June', 'Temmuz': 'July', 'Ağustos': 'August',
-      'Eylül': 'September', 'Ekim': 'October', 'Kasım': 'November', 'Aralık': 'December'
-    };
-    let res = dateStr;
-    Object.keys(months).forEach(m => { res = res.replace(m, months[m]); });
-    return res;
-  };
+  // Varsayılan ve dile göre belirlenen değerler (Canlı Çeviri Destekli)
+  const displayHero1 = lang === 'en'
+    ? (liveTranslations.hero1 || getCachedTranslation(heroTitle1, t.hero1Default))
+    : (heroTitle1 || t.hero1Default);
 
-  // Varsayılan ve dile göre belirlenen değerler
-  const displayHero1 = lang === 'en' ? t.hero1Default : (heroTitle1 || t.hero1Default);
-  const displayHero2 = lang === 'en' ? t.hero2Default : (heroTitle2 || t.hero2Default);
-  const displayAbout = lang === 'en' ? t.aboutDefault : (siteText || t.aboutDefault);
-  const displayFeatureCards = lang === 'en' ? DEFAULT_FEATURE_CARDS_EN : (featureCards || DEFAULT_FEATURE_CARDS_TR);
+  const displayHero2 = lang === 'en'
+    ? (liveTranslations.hero2 || getCachedTranslation(heroTitle2, t.hero2Default))
+    : (heroTitle2 || t.hero2Default);
+
+  const displayAbout = lang === 'en'
+    ? (liveTranslations.about || getCachedTranslation(siteText, t.aboutDefault))
+    : (siteText || t.aboutDefault);
+
+  const displayFeatureCards = (featureCards && featureCards.length > 0 ? featureCards : DEFAULT_FEATURE_CARDS_TR).map(card => {
+    if (lang === 'en') {
+      const live = liveTranslations.featureCards[card.id];
+      return {
+        ...card,
+        title: live?.titleEn || getCachedTranslation(card.title, card.title),
+        description: live?.descEn || getCachedTranslation(card.description, card.description)
+      };
+    }
+    return card;
+  });
 
   const displayMediaItems = mediaItems.map(item => {
     if (lang === 'en') {
+      const live = liveTranslations.media[item.id];
       const trans = MEDIA_TRANSLATIONS_EN[item.title];
-      if (trans) {
-        return { ...item, title: trans.title, date: trans.date, description: trans.description };
-      }
-      return { ...item, date: translateDate(item.date) };
+      return {
+        ...item,
+        title: live?.titleEn || trans?.title || getCachedTranslation(item.title, item.title),
+        date: translateDate(trans?.date || item.date),
+        description: live?.descEn || trans?.description || getCachedTranslation(item.description, item.description)
+      };
     }
     return item;
   });
@@ -309,8 +401,14 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
     const defaultList = lang === 'en' ? DEFAULT_PROJECTS_EN : DEFAULT_PROJECTS_TR;
     let enriched = { ...proj };
 
-    if (lang === 'en' && PROJECT_TRANSLATIONS_EN[proj.title]) {
-      enriched = { ...enriched, ...PROJECT_TRANSLATIONS_EN[proj.title] };
+    if (lang === 'en') {
+      const live = liveTranslations.projects[proj.id];
+      const hardcodedTrans = PROJECT_TRANSLATIONS_EN[proj.title];
+      if (hardcodedTrans) {
+        enriched = { ...enriched, ...hardcodedTrans };
+      }
+      enriched.title = live?.titleEn || hardcodedTrans?.title || getCachedTranslation(proj.title, proj.title);
+      enriched.description = live?.descEn || hardcodedTrans?.description || getCachedTranslation(proj.description, proj.description);
     }
 
     const match = defaultList.find(d =>
@@ -332,6 +430,14 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
     }
     return enriched;
   });
+
+  const activeSelectedMedia = selectedMedia
+    ? (displayMediaItems.find(m => m.id === selectedMedia.id) || selectedMedia)
+    : null;
+
+  const activeSelectedProject = selectedProject
+    ? (displayProjects.find(p => p.id === selectedProject.id) || selectedProject)
+    : null;
 
   // Stack-based History Navigation Handlers
   const openProject = (project) => {
@@ -608,7 +714,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
       </section>
 
       {/* Media Item Detail Modal */}
-      {selectedMedia && (
+      {activeSelectedMedia && (
         <div className="modal-overlay active" onClick={closeMedia}>
           <div
             className="modal-content"
@@ -657,10 +763,10 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
               justifyContent: 'center',
               border: '1px solid var(--border-color)'
             }}>
-              {selectedMedia.imageUrl ? (
+              {activeSelectedMedia.imageUrl ? (
                 <img
-                  src={selectedMedia.imageUrl}
-                  alt={selectedMedia.title}
+                  src={activeSelectedMedia.imageUrl}
+                  alt={activeSelectedMedia.title}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', maxHeight: '380px', display: 'block' }}
                 />
               ) : (
@@ -672,7 +778,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
             </div>
 
             {/* Date Tag */}
-            {selectedMedia.date && (
+            {activeSelectedMedia.date && (
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -685,18 +791,18 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                 borderRadius: '999px',
                 marginBottom: '0.75rem'
               }}>
-                <Calendar size={13} /> {selectedMedia.date}
+                <Calendar size={13} /> {activeSelectedMedia.date}
               </span>
             )}
 
             {/* Event Title */}
             <h3 style={{ fontSize: '1.6rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-              {selectedMedia.title}
+              {activeSelectedMedia.title}
             </h3>
 
             {/* Event Description */}
             <div style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: '1.7', whiteSpace: 'pre-wrap', marginBottom: '2rem' }}>
-              {selectedMedia.description || t.noDescription}
+              {activeSelectedMedia.description || t.noDescription}
             </div>
 
             <button
@@ -712,7 +818,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
       )}
 
       {/* Project Detail Modal */}
-      {selectedProject && (
+      {activeSelectedProject && (
         <div className="modal-overlay active" onClick={closeProject}>
           <div
             className="modal-content"
@@ -768,10 +874,10 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                 border: '1px solid rgba(17, 57, 150, 0.2)'
               }}>
                 <Trophy size={14} />
-                {selectedProject.badge || (lang === 'tr' ? 'TEKNOFEST Projesi' : 'TEKNOFEST Project')}
+                {activeSelectedProject.badge || (lang === 'tr' ? 'TEKNOFEST Projesi' : 'TEKNOFEST Project')}
               </span>
 
-              {selectedProject.category && (
+              {activeSelectedProject.category && (
                 <span style={{
                   fontSize: '0.8rem',
                   color: 'var(--text-secondary)',
@@ -780,11 +886,11 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                   borderRadius: '999px',
                   border: '1px solid var(--border-color)'
                 }}>
-                  {selectedProject.category}
+                  {activeSelectedProject.category}
                 </span>
               )}
 
-              {selectedProject.status && (
+              {activeSelectedProject.status && (
                 <span style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -797,7 +903,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                   borderRadius: '999px'
                 }}>
                   <Sparkles size={13} />
-                  {selectedProject.status}
+                  {activeSelectedProject.status}
                 </span>
               )}
             </div>
@@ -810,7 +916,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
               marginBottom: '1.25rem',
               color: 'var(--text-primary)'
             }}>
-              {selectedProject.title}
+              {activeSelectedProject.title}
             </h2>
 
             {/* Banner card */}
@@ -862,12 +968,12 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                 fontSize: '1rem',
                 lineHeight: '1.8'
               }} className="markdown-content">
-                <ReactMarkdown>{selectedProject.description}</ReactMarkdown>
+                <ReactMarkdown>{activeSelectedProject.description}</ReactMarkdown>
               </div>
             </div>
 
             {/* Technical Specifications */}
-            {selectedProject.specs && selectedProject.specs.length > 0 && (
+            {activeSelectedProject.specs && activeSelectedProject.specs.length > 0 && (
               <div style={{ marginBottom: '2rem' }}>
                 <h4 style={{
                   fontSize: '0.95rem',
@@ -888,7 +994,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                   gap: '0.75rem'
                 }}>
-                  {selectedProject.specs.map((spec, sIdx) => (
+                  {activeSelectedProject.specs.map((spec, sIdx) => (
                     <div
                       key={sIdx}
                       style={{
@@ -914,7 +1020,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
             )}
 
             {/* Subsystems */}
-            {selectedProject.subsystems && selectedProject.subsystems.length > 0 && (
+            {activeSelectedProject.subsystems && activeSelectedProject.subsystems.length > 0 && (
               <div style={{ marginBottom: '2rem' }}>
                 <h4 style={{
                   fontSize: '0.95rem',
@@ -931,7 +1037,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                   {t.subsystems}
                 </h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {selectedProject.subsystems.map((sub, subIdx) => (
+                  {activeSelectedProject.subsystems.map((sub, subIdx) => (
                     <span
                       key={subIdx}
                       style={{
@@ -952,7 +1058,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
             )}
 
             {/* Highlights */}
-            {selectedProject.highlights && selectedProject.highlights.length > 0 && (
+            {activeSelectedProject.highlights && activeSelectedProject.highlights.length > 0 && (
               <div style={{ marginBottom: '2rem' }}>
                 <h4 style={{
                   fontSize: '0.95rem',
@@ -969,7 +1075,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
                   {t.highlights}
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                  {selectedProject.highlights.map((hl, hlIdx) => (
+                  {activeSelectedProject.highlights.map((hl, hlIdx) => (
                     <div
                       key={hlIdx}
                       style={{

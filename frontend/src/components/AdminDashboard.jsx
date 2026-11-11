@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock, Settings, ChevronDown, ChevronUp, Upload, Image as ImageIcon, FileText, FileSpreadsheet, FileCode, FileImage, Printer } from 'lucide-react';
+import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock, Settings, ChevronDown, ChevronUp, Upload, Image as ImageIcon, FileText, FileSpreadsheet, FileCode, FileImage, Printer, Sparkles } from 'lucide-react';
 import API_BASE from '../config';
+import { translateToEn } from '../utils/translator';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('about');
@@ -174,6 +175,11 @@ export default function AdminDashboard() {
     setFeatureCards(updated);
     localStorage.setItem('site_feature_cards', JSON.stringify(updated));
     await saveSettingToApi('site_feature_cards', JSON.stringify(updated));
+
+    // Canlı İngilizce çeviriyi önbelleğe al
+    if (newFeature.title) translateToEn(newFeature.title);
+    if (newFeature.description) translateToEn(newFeature.description);
+
     updateLastModified('features');
     setShowFeatureModal(false);
   };
@@ -670,6 +676,20 @@ export default function AdminDashboard() {
     await saveSettingToApi('site_hero_title1', heroTitle1);
     await saveSettingToApi('site_hero_title2', heroTitle2);
 
+    // Canlı İngilizce çevirilerini otomatik oluştur ve kaydet
+    translateToEn(heroTitle1).then(en1 => {
+      localStorage.setItem('site_hero_title1_en', en1);
+      saveSettingToApi('site_hero_title1_en', en1);
+    });
+    translateToEn(heroTitle2).then(en2 => {
+      localStorage.setItem('site_hero_title2_en', en2);
+      saveSettingToApi('site_hero_title2_en', en2);
+    });
+    translateToEn(aboutText).then(enAbout => {
+      localStorage.setItem('site_about_text_en', enAbout);
+      saveSettingToApi('site_about_text_en', enAbout);
+    });
+
     updateLastModified('about');
   };
 
@@ -755,6 +775,10 @@ export default function AdminDashboard() {
 
         if (res.ok) {
           success = true;
+          // Canlı İngilizce çeviriyi önbelleğe al
+          if (newProject.title) translateToEn(newProject.title);
+          if (newProject.description) translateToEn(newProject.description);
+
           setShowProjectModal(false);
           setNewProject({ title: '', description: '' });
           setEditingProject(null);
@@ -888,6 +912,10 @@ export default function AdminDashboard() {
 
         if (res.ok) {
           success = true;
+          // Canlı İngilizce çeviriyi önbelleğe al
+          if (newMedia.title) translateToEn(newMedia.title);
+          if (newMedia.description) translateToEn(newMedia.description);
+
           setShowMediaModal(false);
           setNewMedia({ title: '', date: '', imageUrl: '', description: '' });
           setEditingMedia(null);
@@ -1321,8 +1349,14 @@ export default function AdminDashboard() {
         {/* --- ABOUT TAB --- */}
         {activeTab === 'about' && (
           <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Biz Kimiz Düzenle</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Biz Kimiz Düzenle</h2>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.45rem', fontSize: '0.78rem', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.2rem 0.65rem', borderRadius: '999px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <Sparkles size={13} />
+                  <span>Canlı Çeviri Aktif: Değişiklik yaptığınızda İngilizcesi de otomatik güncellenir</span>
+                </div>
+              </div>
               {lastModified.about && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
                   <Clock size={12} /> Son değişiklik: {lastModified.about}
