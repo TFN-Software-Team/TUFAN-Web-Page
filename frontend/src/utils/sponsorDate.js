@@ -161,3 +161,4 @@ export function normalizeSponsor(item) {
     endDate: item.endDate ?? item.end_date ?? '',
   };
 }
+
