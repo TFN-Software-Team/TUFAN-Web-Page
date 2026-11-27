@@ -23,3 +23,4 @@ if (process.env.VERCEL) {
 } else {
   console.log('[prepare-ssr] Local build: copied dist/index.html -> dist/_shell.html');
 }
+
