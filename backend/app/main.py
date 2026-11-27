@@ -151,6 +151,54 @@ def get_db():
     finally:
         db.close()
 
+# Tek istekte tüm site verisini dönen bootstrap endpoint (SSR & hızlı ilk yükleme için)
+@app.get("/bootstrap")
+@app.get("/bootstrap/")
+def get_bootstrap_data(db: Session = Depends(get_db)):
+    settings_rows = db.query(models.Setting).all()
+    settings_map = {s.key: s.value for s in settings_rows}
+
+    projects_rows = db.query(models.Project).all()
+    projects_list = [
+        {"id": p.id, "title": p.title, "description": p.description}
+        for p in projects_rows
+    ]
+
+    media_rows = db.query(models.Media).all()
+    media_list = [
+        {
+            "id": m.id,
+            "title": m.title,
+            "date": m.date,
+            "image_url": m.image_url,
+            "imageUrl": m.image_url,
+            "description": m.description,
+        }
+        for m in media_rows
+    ]
+
+    sponsor_rows = db.query(models.Sponsor).order_by(models.Sponsor.id.asc()).all()
+    sponsors_list = [
+        {
+            "id": s.id,
+            "name": s.name,
+            "logo_url": s.logo_url,
+            "logoUrl": s.logo_url,
+            "website_url": s.website_url,
+            "websiteUrl": s.website_url,
+            "end_date": s.end_date,
+            "endDate": s.end_date,
+        }
+        for s in sponsor_rows
+    ]
+
+    return {
+        "settings": settings_map,
+        "projects": projects_list,
+        "media": media_list,
+        "sponsors": sponsors_list,
+    }
+
 # 2. PROJE EKLEME (POST) - Çift rota desteği (slash'li ve slash'siz)
 @app.post("/projeler", response_model=schemas.Project)
 @app.post("/projeler/", response_model=schemas.Project)

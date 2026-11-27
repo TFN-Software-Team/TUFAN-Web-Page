@@ -126,15 +126,64 @@ const DEFAULT_SOCIAL_LINKS = {
   linkedin: 'https://www.linkedin.com/company/akdeniz-tufan-elektromobil/'
 };
 
+function safeParseJson(raw, fallback) {
+  if (!raw || typeof raw !== 'string') return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function getServerInitialData() {
+  if (typeof window === 'undefined') return null;
+  const data = window.__INITIAL_DATA__;
+  return data && typeof data === 'object' ? data : null;
+}
+
 export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lang, mediaRefreshKey = 0 }) {
-  const [siteText, setSiteText] = useState('');
-  const [heroTitle1, setHeroTitle1] = useState('');
-  const [heroTitle2, setHeroTitle2] = useState('');
-  const [projects, setProjects] = useState([]);
-  const [mediaItems, setMediaItems] = useState([]);
-  const [sponsors, setSponsors] = useState([]);
-  const [socialLinks, setSocialLinks] = useState(DEFAULT_SOCIAL_LINKS);
-  const [featureCards, setFeatureCards] = useState([]);
+  const ssrData = getServerInitialData();
+  const ssrSettings = ssrData?.settings || {};
+
+  const [siteText, setSiteText] = useState(() =>
+    ssrSettings.site_about_text || localStorage.getItem('site_about_text') || ''
+  );
+  const [heroTitle1, setHeroTitle1] = useState(() =>
+    ssrSettings.site_hero_title1 || localStorage.getItem('site_hero_title1') || ''
+  );
+  const [heroTitle2, setHeroTitle2] = useState(() =>
+    ssrSettings.site_hero_title2 || localStorage.getItem('site_hero_title2') || ''
+  );
+  const [projects, setProjects] = useState(() =>
+    Array.isArray(ssrData?.projects) ? ssrData.projects : []
+  );
+  const [mediaItems, setMediaItems] = useState(() =>
+    Array.isArray(ssrData?.media) ? ssrData.media : []
+  );
+  const [sponsors, setSponsors] = useState(() => {
+    if (Array.isArray(ssrData?.sponsors) && ssrData.sponsors.length > 0) {
+      return ssrData.sponsors.map(normalizeSponsor).filter(Boolean);
+    }
+    const ssrSponsorsFromSettings = safeParseJson(ssrSettings.site_sponsors, null);
+    if (Array.isArray(ssrSponsorsFromSettings)) {
+      return ssrSponsorsFromSettings.map(normalizeSponsor).filter(Boolean);
+    }
+    if (ssrData) return [];
+    const localSponsors = safeParseJson(localStorage.getItem('site_sponsors'), []);
+    return Array.isArray(localSponsors) ? localSponsors.map(normalizeSponsor).filter(Boolean) : [];
+  });
+  const [socialLinks, setSocialLinks] = useState(() => {
+    const fromSsr = safeParseJson(ssrSettings.site_social_links, null);
+    if (fromSsr && typeof fromSsr === 'object') return fromSsr;
+    const fromLocal = safeParseJson(localStorage.getItem('site_social_links'), null);
+    return fromLocal && typeof fromLocal === 'object' ? fromLocal : DEFAULT_SOCIAL_LINKS;
+  });
+  const [featureCards, setFeatureCards] = useState(() => {
+    const fromSsr = safeParseJson(ssrSettings.site_feature_cards, null);
+    if (Array.isArray(fromSsr)) return fromSsr;
+    const fromLocal = safeParseJson(localStorage.getItem('site_feature_cards'), null);
+    return Array.isArray(fromLocal) ? fromLocal : null;
+  });
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
@@ -175,111 +224,137 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
   };
 
   useEffect(() => {
-    // Hero Titles — localStorage'dan hızlıca yükle (flash önleme)
-    const savedText = localStorage.getItem('site_about_text');
-    setSiteText(savedText || '');
-    setHeroTitle1(localStorage.getItem('site_hero_title1') || '');
-    setHeroTitle2(localStorage.getItem('site_hero_title2') || '');
-
-    // Feature Cards — localStorage'dan hızlıca yükle
-    const savedFeatures = localStorage.getItem('site_feature_cards');
-    if (savedFeatures) {
-      try { setFeatureCards(JSON.parse(savedFeatures)); } catch (e) { setFeatureCards(null); }
-    } else {
-      setFeatureCards(null);
-    }
-
-    // Social Links — localStorage'dan hızlıca yükle
-    const savedSocial = localStorage.getItem('site_social_links');
-    if (savedSocial) {
-      try { setSocialLinks(JSON.parse(savedSocial)); } catch (e) { /* default kalır */ }
-    }
-
-    // Sponsorlar — localStorage'dan hızlıca yükle (flash önleme)
-    const savedSponsors = localStorage.getItem('site_sponsors');
-    if (savedSponsors) {
-      try {
-        const parsedSponsors = JSON.parse(savedSponsors);
-        if (Array.isArray(parsedSponsors)) {
-          setSponsors(parsedSponsors.map(normalizeSponsor).filter(Boolean));
+    const applySettingsMap = (settingsMap, { allowSponsorsFallback = true } = {}) => {
+      if (!settingsMap || typeof settingsMap !== 'object') return;
+      if (settingsMap.site_about_text) {
+        setSiteText(settingsMap.site_about_text);
+        localStorage.setItem('site_about_text', settingsMap.site_about_text);
+      }
+      if (settingsMap.site_hero_title1) {
+        setHeroTitle1(settingsMap.site_hero_title1);
+        localStorage.setItem('site_hero_title1', settingsMap.site_hero_title1);
+      }
+      if (settingsMap.site_hero_title2) {
+        setHeroTitle2(settingsMap.site_hero_title2);
+        localStorage.setItem('site_hero_title2', settingsMap.site_hero_title2);
+      }
+      if (settingsMap.site_feature_cards) {
+        const parsed = safeParseJson(settingsMap.site_feature_cards, null);
+        if (Array.isArray(parsed)) {
+          setFeatureCards(parsed);
+          localStorage.setItem('site_feature_cards', settingsMap.site_feature_cards);
         }
-      } catch (e) { /* ignore */ }
-    }
-
-    let sponsorsLoadedFromEndpoint = false;
-
-    // Sponsorlar (from DB API — fallback to /settings/site_sponsors if not yet deployed)
-    fetch(`${API_BASE}/sponsors/`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) {
-          sponsorsLoadedFromEndpoint = true;
-          const normalized = data.map(normalizeSponsor).filter(Boolean);
+      }
+      if (settingsMap.site_social_links) {
+        const parsed = safeParseJson(settingsMap.site_social_links, null);
+        if (parsed && typeof parsed === 'object') {
+          setSocialLinks(parsed);
+          localStorage.setItem('site_social_links', settingsMap.site_social_links);
+        }
+      }
+      if (settingsMap.site_apps_open !== undefined) {
+        localStorage.setItem('site_apps_open', settingsMap.site_apps_open);
+      }
+      if (settingsMap.site_teams) {
+        localStorage.setItem('site_teams', settingsMap.site_teams);
+      }
+      if (allowSponsorsFallback && settingsMap.site_sponsors) {
+        const parsed = safeParseJson(settingsMap.site_sponsors, null);
+        if (Array.isArray(parsed)) {
+          const normalized = parsed.map(normalizeSponsor).filter(Boolean);
           setSponsors(normalized);
           localStorage.setItem('site_sponsors', JSON.stringify(normalized));
         }
-      })
-      .catch(() => { /* /settings/ fallback kullanılacak */ });
+      }
+    };
 
-    // Settings API'den güncel verileri çek (localStorage'ı override eder)
-    fetch(`${API_BASE}/settings/`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) {
-          const settingsMap = {};
-          data.forEach(s => { settingsMap[s.key] = s.value; });
-          if (settingsMap.site_about_text) setSiteText(settingsMap.site_about_text);
-          if (settingsMap.site_hero_title1) setHeroTitle1(settingsMap.site_hero_title1);
-          if (settingsMap.site_hero_title2) setHeroTitle2(settingsMap.site_hero_title2);
-          if (settingsMap.site_feature_cards) {
-            try { setFeatureCards(JSON.parse(settingsMap.site_feature_cards)); } catch (e) { /* localStorage değeri kalır */ }
-          }
-          if (settingsMap.site_social_links) {
-            try { setSocialLinks(JSON.parse(settingsMap.site_social_links)); } catch (e) { /* default kalır */ }
-          }
-          if (!sponsorsLoadedFromEndpoint && settingsMap.site_sponsors) {
-            try {
-              const parsed = JSON.parse(settingsMap.site_sponsors);
-              if (Array.isArray(parsed)) {
-                const normalized = parsed.map(normalizeSponsor).filter(Boolean);
-                setSponsors(normalized);
-                localStorage.setItem('site_sponsors', JSON.stringify(normalized));
-              }
-            } catch (e) { /* localStorage değeri kalır */ }
+    const applyBootstrapPayload = (payload) => {
+      if (!payload || typeof payload !== 'object') return;
+      const hasSponsorsArray = Array.isArray(payload.sponsors) && payload.sponsors.length > 0;
+      applySettingsMap(payload.settings, { allowSponsorsFallback: !hasSponsorsArray });
+      if (Array.isArray(payload.projects)) setProjects(payload.projects);
+      if (Array.isArray(payload.media)) setMediaItems(payload.media);
+      if (hasSponsorsArray) {
+        const normalized = payload.sponsors.map(normalizeSponsor).filter(Boolean);
+        setSponsors(normalized);
+        localStorage.setItem('site_sponsors', JSON.stringify(normalized));
+      } else if (Array.isArray(payload.sponsors) && !payload.settings?.site_sponsors) {
+        setSponsors([]);
+        localStorage.setItem('site_sponsors', JSON.stringify([]));
+      }
+    };
+
+    // İlk açılışta Vercel SSR verisi (window.__INITIAL_DATA__) zaten hazırsa ekstra ağ isteği atma;
+    // sadece localStorage'ı güncel tut (Modals.jsx vb. için). Admin çıkışında (mediaRefreshKey > 0) canlı yenile.
+    const initial = getServerInitialData();
+    if (initial && mediaRefreshKey === 0) {
+      applyBootstrapPayload(initial);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadLiveSiteData = async () => {
+      // 1. Önce tek istekte tüm veriyi çek (/bootstrap/)
+      try {
+        const res = await fetch(`${API_BASE}/bootstrap/`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) applyBootstrapPayload(data);
+          return;
+        }
+      } catch {
+        // Fallback olarak tekil endpoint'leri dene
+      }
+
+      // 2. Fallback (backend henüz /bootstrap/ desteklemiyorsa)
+      let sponsorsLoadedFromEndpoint = false;
+      try {
+        const res = await fetch(`${API_BASE}/sponsors/`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && Array.isArray(data)) {
+            sponsorsLoadedFromEndpoint = true;
+            const normalized = data.map(normalizeSponsor).filter(Boolean);
+            setSponsors(normalized);
+            localStorage.setItem('site_sponsors', JSON.stringify(normalized));
           }
         }
-      })
-      .catch(err => console.error('Error fetching settings from API:', err));
+      } catch {
+        // /settings/ fallback kullanılacak
+      }
 
-    // Medya (from DB API)
-    fetch(`${API_BASE}/media/`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) setMediaItems(data);
-      })
-      .catch(err => console.error('Error fetching media from API:', err));
+      await Promise.all([
+        fetch(`${API_BASE}/settings/`)
+          .then(res => (res.ok ? res.json() : null))
+          .then(data => {
+            if (!cancelled && Array.isArray(data)) {
+              const settingsMap = {};
+              data.forEach(s => { settingsMap[s.key] = s.value; });
+              applySettingsMap(settingsMap, { allowSponsorsFallback: !sponsorsLoadedFromEndpoint });
+            }
+          })
+          .catch(err => console.error('Error fetching settings from API:', err)),
 
-    // Projeler (from DB API)
-    fetch(`${API_BASE}/projeler/`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (Array.isArray(data)) setProjects(data);
-      })
-      .catch(err => console.error('Error fetching projects from API:', err));
+        fetch(`${API_BASE}/media/`)
+          .then(res => (res.ok ? res.json() : null))
+          .then(data => {
+            if (!cancelled && Array.isArray(data)) setMediaItems(data);
+          })
+          .catch(err => console.error('Error fetching media from API:', err)),
 
-  }, [lang, mediaRefreshKey]);
+        fetch(`${API_BASE}/projeler/`)
+          .then(res => (res.ok ? res.json() : null))
+          .then(data => {
+            if (!cancelled && Array.isArray(data)) setProjects(data);
+          })
+          .catch(err => console.error('Error fetching projects from API:', err)),
+      ]);
+    };
+
+    loadLiveSiteData();
+    return () => { cancelled = true; };
+  }, [mediaRefreshKey]);
 
   const MEDIA_TRANSLATIONS_EN = {
     'TEKNOFEST Hackathon 2025': {

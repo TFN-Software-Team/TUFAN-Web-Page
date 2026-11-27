@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/api/ssr"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/api/ssr"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://tufan-backend.onrender.com/$1"
     }
