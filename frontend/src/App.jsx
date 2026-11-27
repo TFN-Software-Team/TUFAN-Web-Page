@@ -81,12 +81,12 @@ export default function App() {
     setMediaRefreshKey(prev => prev + 1);
   };
 
-  // Render.com'daki backend uyku modundaysa uyandır
+  // Render.com'daki backend uyku modundaysa uyandır (SSR verisi zaten geldiyse ekstra istek atma)
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.__INITIAL_DATA__) return;
     const wakeUpBackend = async () => {
       try {
-        // Sessizce arka planda backend'e ping at
-        await fetch(`${API_BASE}/media/`, { signal: AbortSignal.timeout(30000) });
+        await fetch(`${API_BASE}/health/`, { signal: AbortSignal.timeout(30000) });
       } catch (e) {
         // Sessizce devam et - sadece uyandırmak için
       }
