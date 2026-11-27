@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, ShieldCheck, Cpu, X, Calendar, Camera, Settings,
   Monitor, Megaphone, Wrench, Zap, BatteryCharging,
-  Trophy, CheckCircle2, Gauge, Layers, Sparkles, ChevronRight, ArrowLeft
+  Trophy, CheckCircle2, Gauge, Layers, Sparkles, ChevronRight, ArrowLeft,
+  Award, Building2, ExternalLink
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_BASE from '../config';
 import MediaMarquee from './MediaMarquee';
 import { translateToEn, getCachedTranslation, translateDate } from '../utils/translator';
+import { isSponsorExpired, normalizeSponsor } from '../utils/sponsorDate';
 
 const DEFAULT_FEATURE_CARDS_TR = [
   { id: 1, title: 'Disiplinler Arası Ekip Çalışması', description: 'Mühendislik, yazılım ve tasarım alanlarında yetkin öğrencilerle geleceğin araçlarını tasarlıyoruz.' },
@@ -130,6 +132,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
   const [heroTitle2, setHeroTitle2] = useState('');
   const [projects, setProjects] = useState([]);
   const [mediaItems, setMediaItems] = useState([]);
+  const [sponsors, setSponsors] = useState([]);
   const [socialLinks, setSocialLinks] = useState(DEFAULT_SOCIAL_LINKS);
   const [featureCards, setFeatureCards] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
@@ -152,6 +155,16 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
     applyForProject: lang === 'tr' ? 'Takıma Katıl / Başvuru Yap' : 'Join the Team / Apply',
     mediaTitle: lang === 'tr' ? 'Medya & Etkinlikler' : 'Media & Events',
     noMedia: lang === 'tr' ? 'Henüz medya öğesi bulunmamaktadır.' : 'No media items available yet.',
+    sponsorsTitle: lang === 'tr' ? 'Sponsorlarımız & Destekçilerimiz' : 'Sponsors & Supporters',
+    sponsorsSubtitle: lang === 'tr'
+      ? 'Yerli ve milli elektrikli araç vizyonumuza güç katan değerli destekçilerimiz.'
+      : 'Our valued partners empowering our vision for domestic electric vehicle technologies.',
+    noSponsorsTitle: lang === 'tr' ? 'Geleceğin Teknolojisine Destek Olun' : 'Support the Technology of the Future',
+    noSponsorsDesc: lang === 'tr'
+      ? 'TUFAN Elektromobil Takımı olarak yerli ve milli elektrikli araç projelerimizde yanımızda olacak değerli sponsorlarımızı ve destekçilerimizi bekliyoruz.'
+      : 'As the TUFAN Electric Vehicle Team, we welcome valued sponsors and supporters to join us on our electric vehicle journey.',
+    contactLinkedin: lang === 'tr' ? 'LinkedIn üzerinden İletişime Geçin' : 'Contact via LinkedIn',
+    contactInstagram: lang === 'tr' ? 'Instagram üzerinden Ulaşın' : 'Reach Us on Instagram',
     dragHint: lang === 'tr' ? 'Sürükleyerek inceleyin' : 'Drag to explore',
     noDescription: lang === 'tr' ? 'Bu etkinlik hakkında henüz ayrıntılı bir açıklama eklenmemiş.' : 'No detailed description has been added for this event yet.',
     close: lang === 'tr' ? 'Kapat' : 'Close',
@@ -182,6 +195,35 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
       try { setSocialLinks(JSON.parse(savedSocial)); } catch (e) { /* default kalır */ }
     }
 
+    // Sponsorlar — localStorage'dan hızlıca yükle (flash önleme)
+    const savedSponsors = localStorage.getItem('site_sponsors');
+    if (savedSponsors) {
+      try {
+        const parsedSponsors = JSON.parse(savedSponsors);
+        if (Array.isArray(parsedSponsors)) {
+          setSponsors(parsedSponsors.map(normalizeSponsor).filter(Boolean));
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    let sponsorsLoadedFromEndpoint = false;
+
+    // Sponsorlar (from DB API — fallback to /settings/site_sponsors if not yet deployed)
+    fetch(`${API_BASE}/sponsors/`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          sponsorsLoadedFromEndpoint = true;
+          const normalized = data.map(normalizeSponsor).filter(Boolean);
+          setSponsors(normalized);
+          localStorage.setItem('site_sponsors', JSON.stringify(normalized));
+        }
+      })
+      .catch(() => { /* /settings/ fallback kullanılacak */ });
+
     // Settings API'den güncel verileri çek (localStorage'ı override eder)
     fetch(`${API_BASE}/settings/`)
       .then(res => {
@@ -200,6 +242,16 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
           }
           if (settingsMap.site_social_links) {
             try { setSocialLinks(JSON.parse(settingsMap.site_social_links)); } catch (e) { /* default kalır */ }
+          }
+          if (!sponsorsLoadedFromEndpoint && settingsMap.site_sponsors) {
+            try {
+              const parsed = JSON.parse(settingsMap.site_sponsors);
+              if (Array.isArray(parsed)) {
+                const normalized = parsed.map(normalizeSponsor).filter(Boolean);
+                setSponsors(normalized);
+                localStorage.setItem('site_sponsors', JSON.stringify(normalized));
+              }
+            } catch (e) { /* localStorage değeri kalır */ }
           }
         }
       })
@@ -502,7 +554,7 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
       }
 
       // Scroll position restoration when returning to sections
-      if (hash === '#projects' || hash === '#media') {
+      if (hash === '#projects' || hash === '#media' || hash === '#sponsors') {
         const savedScroll = sessionStorage.getItem('scroll_before_modal');
         if (savedScroll) {
           window.scrollTo({ top: parseInt(savedScroll, 10), behavior: 'smooth' });
@@ -712,6 +764,133 @@ export default function Sections({ onOpenAdminModal, onOpenApplicationModal, lan
           />
         )}
       </section>
+
+      {/* Sponsors & Supporters Section */}
+      {(() => {
+        const activeSponsors = sponsors.filter(s => !isSponsorExpired(s.endDate));
+        const getSafeWebsiteUrl = (url) => {
+          if (!url || typeof url !== 'string') return '';
+          const trimmed = url.trim();
+          if (/^https?:\/\//i.test(trimmed)) return trimmed;
+          return '';
+        };
+
+        return (
+          <section id="sponsors" className="section reveal" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6rem', minHeight: 'auto' }}>
+            <div style={{ marginBottom: '2.5rem' }}>
+              <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', marginBottom: '1.25rem', color: 'var(--text-primary)' }}>
+                {t.sponsorsTitle}
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', maxWidth: '640px', margin: 0 }}>
+                {t.sponsorsSubtitle}
+              </p>
+            </div>
+
+            {activeSponsors.length === 0 ? (
+              <div
+                className="premium-card"
+                style={{
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: 'clamp(2rem, 5vw, 3.5rem)'
+                }}
+              >
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '16px',
+                  backgroundColor: 'rgba(17, 57, 150, 0.1)',
+                  color: 'var(--tfn-blue)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(17, 57, 150, 0.18)'
+                }}>
+                  <Award size={28} />
+                </div>
+                <h3 style={{ fontSize: '1.35rem', margin: 0, color: 'var(--text-primary)' }}>
+                  {t.noSponsorsTitle}
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: '560px', margin: 0, lineHeight: '1.7' }}>
+                  {t.noSponsorsDesc}
+                </p>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.75rem' }}>
+                  {socialLinks.linkedin && (
+                    <a
+                      href={socialLinks.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      <span>{t.contactLinkedin}</span>
+                      <ExternalLink size={15} />
+                    </a>
+                  )}
+                  {socialLinks.instagram && (
+                    <a
+                      href={socialLinks.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      <span>{t.contactInstagram}</span>
+                      <ExternalLink size={15} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="sponsors-grid">
+                {activeSponsors.map((sponsor) => {
+                  const safeUrl = getSafeWebsiteUrl(sponsor.websiteUrl);
+                  const cardContent = (
+                    <>
+                      <div className="sponsor-logo-box">
+                        {sponsor.logoUrl ? (
+                          <img
+                            src={sponsor.logoUrl}
+                            alt={sponsor.name}
+                            className="sponsor-logo-img"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <Building2 size={40} style={{ color: '#94a3b8' }} />
+                        )}
+                      </div>
+                      <h3 className="sponsor-name">
+                        <span>{sponsor.name}</span>
+                        {safeUrl && <ExternalLink size={14} style={{ opacity: 0.65, flexShrink: 0 }} />}
+                      </h3>
+                    </>
+                  );
+
+                  return safeUrl ? (
+                    <a
+                      key={sponsor.id}
+                      href={safeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="sponsor-card"
+                      title={sponsor.name}
+                    >
+                      {cardContent}
+                    </a>
+                  ) : (
+                    <div key={sponsor.id} className="sponsor-card">
+                      {cardContent}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        );
+      })()}
 
       {/* Media Item Detail Modal */}
       {activeSelectedMedia && (

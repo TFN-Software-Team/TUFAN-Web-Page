@@ -1,6 +1,7 @@
 import os
 import secrets
 import time
+from datetime import date
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -352,3 +353,92 @@ def update_setting(key: str, setting: schemas.SettingBase, db: Session = Depends
     db.commit()
     db.refresh(db_setting)
     return db_setting
+
+# 12. SPONSORLAR / DESTEKÇİLER (SPONSORS)
+def _serialize_sponsor(item: models.Sponsor) -> dict:
+    return {
+        "id": item.id,
+        "name": item.name,
+        "logo_url": item.logo_url,
+        "logoUrl": item.logo_url,
+        "website_url": item.website_url,
+        "websiteUrl": item.website_url,
+        "end_date": item.end_date,
+        "endDate": item.end_date,
+    }
+
+def _is_sponsor_active(end_date_str) -> bool:
+    if not end_date_str:
+        return True
+    try:
+        return date.fromisoformat(end_date_str.strip()[:10]) >= date.today()
+    except ValueError:
+        return True
+
+@app.get("/sponsors", response_model=list[schemas.Sponsor])
+@app.get("/sponsors/", response_model=list[schemas.Sponsor])
+def list_sponsors(active_only: bool = Query(default=False), db: Session = Depends(get_db)):
+    items = db.query(models.Sponsor).order_by(models.Sponsor.id.asc()).all()
+    if active_only:
+        items = [s for s in items if _is_sponsor_active(s.end_date)]
+    return [_serialize_sponsor(item) for item in items]
+
+@app.post("/sponsors", response_model=schemas.Sponsor)
+@app.post("/sponsors/", response_model=schemas.Sponsor)
+def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db)):
+    s_dict = sponsor.model_dump()
+    logo = s_dict.get("logoUrl") or s_dict.get("logo_url") or ""
+    website = s_dict.get("websiteUrl") or s_dict.get("website_url") or ""
+    end_date = s_dict.get("endDate") if s_dict.get("endDate") is not None else s_dict.get("end_date")
+    if end_date is not None:
+        end_date = end_date.strip() or None
+
+    yeni_sponsor = models.Sponsor(
+        name=s_dict["name"].strip(),
+        logo_url=logo,
+        website_url=website,
+        end_date=end_date,
+    )
+    db.add(yeni_sponsor)
+    db.commit()
+    db.refresh(yeni_sponsor)
+    return _serialize_sponsor(yeni_sponsor)
+
+@app.put("/sponsors/{sponsor_id}", response_model=schemas.Sponsor)
+@app.put("/sponsors/{sponsor_id}/", response_model=schemas.Sponsor)
+def update_sponsor(sponsor_id: int, sponsor: schemas.SponsorCreate, db: Session = Depends(get_db)):
+    db_sponsor = db.query(models.Sponsor).filter(models.Sponsor.id == sponsor_id).first()
+    if not db_sponsor:
+        raise HTTPException(status_code=404, detail="Sponsor bulunamadı")
+    s_dict = sponsor.model_dump()
+    if s_dict.get("name") is not None:
+        db_sponsor.name = s_dict["name"].strip()
+    logo = s_dict.get("logoUrl") if s_dict.get("logoUrl") is not None else s_dict.get("logo_url")
+    if logo is not None:
+        db_sponsor.logo_url = logo
+    website = s_dict.get("websiteUrl") if s_dict.get("websiteUrl") is not None else s_dict.get("website_url")
+    if website is not None:
+        db_sponsor.website_url = website
+    end_date = s_dict.get("endDate") if s_dict.get("endDate") is not None else s_dict.get("end_date")
+    db_sponsor.end_date = end_date.strip() if isinstance(end_date, str) and end_date.strip() else None
+
+    db.commit()
+    db.refresh(db_sponsor)
+    return _serialize_sponsor(db_sponsor)
+
+@app.delete("/sponsors/{sponsor_id}")
+@app.delete("/sponsors/{sponsor_id}/")
+def delete_sponsor(sponsor_id: int, db: Session = Depends(get_db)):
+    db_sponsor = db.query(models.Sponsor).filter(models.Sponsor.id == sponsor_id).first()
+    if not db_sponsor:
+        raise HTTPException(status_code=404, detail="Sponsor bulunamadı")
+    db.delete(db_sponsor)
+    db.commit()
+    return {"message": "Sponsor silindi"}
+
+@app.delete("/sponsors", response_model=dict)
+@app.delete("/sponsors/", response_model=dict)
+def delete_all_sponsors(db: Session = Depends(get_db)):
+    db.query(models.Sponsor).delete()
+    db.commit()
+    return {"message": "Tüm sponsorlar silindi"}

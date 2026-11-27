@@ -38,3 +38,12 @@ class Setting(Base):
     
     key = Column(String, primary_key=True, index=True)
     value = Column(String)
+
+class Sponsor(Base):
+    __tablename__ = "sponsors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    logo_url = Column(String, nullable=True)
+    website_url = Column(String, nullable=True)
+    end_date = Column(String, nullable=True)  # ISO calendar date: YYYY-MM-DD

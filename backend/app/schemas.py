@@ -79,3 +79,22 @@ class SettingBase(BaseModel):
 class Setting(SettingBase):
     class Config:
         from_attributes = True
+
+# Sponsor / Destekçi şeması
+class SponsorBase(BaseModel):
+    name: str
+    logo_url: Optional[str] = None
+    logoUrl: Optional[str] = None
+    website_url: Optional[str] = None
+    websiteUrl: Optional[str] = None
+    end_date: Optional[str] = None
+    endDate: Optional[str] = None
+
+class SponsorCreate(SponsorBase):
+    pass
+
+class Sponsor(SponsorBase):
+    id: int
+
+    class Config:
+        from_attributes = True
