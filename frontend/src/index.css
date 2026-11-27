@@ -1,4 +1,6 @@
 :root {
+  color-scheme: light;
+  accent-color: #ff640a;
   /* Color Palette - Light Mode - Premium Corporate */
   --bg-color: #ffffff;
   --bg-secondary: #f9fafb;
@@ -26,6 +28,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   /* Color Palette - Dark Mode - Premium Corporate (Pure Black) */
   --bg-color: #000000;
   --bg-secondary: #0a0a0a;
@@ -713,5 +716,105 @@ a {
 
 .dark .project-title-interactive:hover {
   color: var(--primary-color);
+}
+
+/* Sponsors & Supporters Section */
+.sponsors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.75rem;
+}
+
+.sponsor-card {
+  padding: 1.75rem 1.5rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1.1rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sponsor-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--tfn-blue), var(--tfn-orange));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.sponsor-card:hover {
+  border-color: var(--tfn-orange);
+  transform: translateY(-5px);
+  box-shadow: 0 20px 28px -8px rgba(17, 57, 150, 0.14);
+}
+
+.dark .sponsor-card:hover {
+  box-shadow: 0 20px 28px -8px rgba(255, 100, 10, 0.2);
+}
+
+.sponsor-card:hover::before {
+  transform: scaleX(1);
+}
+
+.sponsor-logo-box {
+  width: 100%;
+  height: 112px;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.sponsor-logo-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.sponsor-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.form-input:not(input[type="range"]):user-invalid {
+  border-color: #ef4444;
+}
+
+@media (max-width: 640px) {
+  .sponsors-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  .sponsor-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .sponsor-logo-box {
+    height: 92px;
+  }
 }
 

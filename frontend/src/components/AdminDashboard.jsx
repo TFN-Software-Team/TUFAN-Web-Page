@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock, Settings, ChevronDown, ChevronUp, Upload, Image as ImageIcon, FileText, FileSpreadsheet, FileCode, FileImage, Printer, Sparkles } from 'lucide-react';
+import { Plus, ChevronLeft, Download, X, Trash2, Edit, Save, CheckCircle, XCircle, Clock, Settings, ChevronDown, ChevronUp, Upload, Image as ImageIcon, FileText, FileSpreadsheet, FileCode, FileImage, Printer, Sparkles, Award, Calendar, Building2, ExternalLink } from 'lucide-react';
 import API_BASE from '../config';
 import { translateToEn } from '../utils/translator';
+import {
+  isSponsorExpired,
+  getSponsorRemainingDays,
+  formatSponsorDate,
+  addMonthsToToday,
+  getEndOfCurrentYear,
+  normalizeSponsor
+} from '../utils/sponsorDate';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('about');
@@ -25,6 +33,22 @@ export default function AdminDashboard() {
   const [editingMedia, setEditingMedia] = useState(null);
   const [isSavingMedia, setIsSavingMedia] = useState(false);
   const [mediaSaveStatus, setMediaSaveStatus] = useState(null); // null | 'saving' | 'saved' | 'error'
+
+  // Sponsors State
+  const [sponsors, setSponsors] = useState(() => {
+    try {
+      const saved = localStorage.getItem('site_sponsors');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed.map(normalizeSponsor).filter(Boolean);
+      }
+    } catch (e) { /* ignore */ }
+    return [];
+  });
+  const [showSponsorModal, setShowSponsorModal] = useState(false);
+  const [editingSponsor, setEditingSponsor] = useState(null);
+  const [isSavingSponsor, setIsSavingSponsor] = useState(false);
+  const [newSponsor, setNewSponsor] = useState({ name: '', logoUrl: '', websiteUrl: '', endDate: '', isIndefinite: false });
 
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
 
@@ -139,6 +163,7 @@ export default function AdminDashboard() {
     features: localStorage.getItem('last_mod_features'),
     projects: localStorage.getItem('last_mod_projects'),
     media: localStorage.getItem('last_mod_media'),
+    sponsors: localStorage.getItem('last_mod_sponsors'),
     social: localStorage.getItem('last_mod_social'),
     teams: localStorage.getItem('last_mod_teams')
   });
@@ -250,6 +275,42 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSponsors = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/sponsors/`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const normalized = data.map(normalizeSponsor).filter(Boolean);
+          setSponsors(normalized);
+          localStorage.setItem('site_sponsors', JSON.stringify(normalized));
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Sponsors endpoint unavailable, falling back to settings:', err);
+    }
+
+    // Fallback: /settings/site_sponsors (ör. Render backend henüz deploy edilmediyse)
+    try {
+      const res = await fetch(`${API_BASE}/settings/`);
+      if (res.ok) {
+        const data = await res.json();
+        const found = Array.isArray(data) ? data.find(s => s.key === 'site_sponsors') : null;
+        if (found && found.value) {
+          const parsed = JSON.parse(found.value);
+          if (Array.isArray(parsed)) {
+            const normalized = parsed.map(normalizeSponsor).filter(Boolean);
+            setSponsors(normalized);
+            localStorage.setItem('site_sponsors', JSON.stringify(normalized));
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching sponsors fallback:', err);
+    }
+  };
+
   const fetchSettings = async () => {
     try {
       const res = await fetch(`${API_BASE}/settings/`);
@@ -286,6 +347,7 @@ export default function AdminDashboard() {
     fetchApplications();
     fetchProjects();
     fetchMediaItems();
+    fetchSponsors();
     fetchSettings();
     if (activeTab === 'applications') {
       setSelectedApplication(null);
@@ -972,6 +1034,173 @@ export default function AdminDashboard() {
     });
   };
 
+  // --- SPONSORS ---
+  const openSponsorModal = (sponsor = null) => {
+    if (sponsor) {
+      const normalized = normalizeSponsor(sponsor);
+      setEditingSponsor(normalized);
+      setNewSponsor({
+        name: normalized.name || '',
+        logoUrl: normalized.logoUrl || '',
+        websiteUrl: normalized.websiteUrl || '',
+        endDate: normalized.endDate || '',
+        isIndefinite: !normalized.endDate
+      });
+    } else {
+      setEditingSponsor(null);
+      setNewSponsor({
+        name: '',
+        logoUrl: '',
+        websiteUrl: '',
+        endDate: addMonthsToToday(12),
+        isIndefinite: false
+      });
+    }
+    setShowSponsorModal(true);
+  };
+
+  const handleSponsorLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // SVG logoları şeffaflık ve vektör keskinliğini koruyarak doğrudan al
+      if (file.type === 'image/svg+xml' && file.size <= 200 * 1024) {
+        setNewSponsor(prev => ({ ...prev, logoUrl: reader.result }));
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 500;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round(height * (MAX_DIM / width));
+            width = MAX_DIM;
+          }
+        } else if (height > MAX_DIM) {
+          width = Math.round(width * (MAX_DIM / height));
+          height = MAX_DIM;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        // PNG formatı ile şeffaf logo arka planını koru
+        const pngDataUrl = canvas.toDataURL('image/png');
+        setNewSponsor(prev => ({ ...prev, logoUrl: pngDataUrl }));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const persistSponsorsFallback = async (updatedList) => {
+    setSponsors(updatedList);
+    const serialized = JSON.stringify(updatedList);
+    localStorage.setItem('site_sponsors', serialized);
+    await saveSettingToApi('site_sponsors', serialized);
+    updateLastModified('sponsors');
+  };
+
+  const handleSaveSponsor = async (e) => {
+    e.preventDefault();
+    if (!newSponsor.name.trim()) return;
+    if (!newSponsor.isIndefinite && !newSponsor.endDate) {
+      alert('Lütfen sponsorluk bitiş tarihini seçin veya "Süresiz" seçeneğini işaretleyin.');
+      return;
+    }
+
+    setIsSavingSponsor(true);
+    const payload = {
+      name: newSponsor.name.trim(),
+      logoUrl: newSponsor.logoUrl.trim(),
+      websiteUrl: newSponsor.websiteUrl.trim(),
+      endDate: newSponsor.isIndefinite ? '' : newSponsor.endDate
+    };
+
+    try {
+      const url = editingSponsor
+        ? `${API_BASE}/sponsors/${editingSponsor.id}`
+        : `${API_BASE}/sponsors/`;
+      const method = editingSponsor ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const savedItem = normalizeSponsor(await res.json());
+        const updatedList = editingSponsor
+          ? sponsors.map(s => s.id === editingSponsor.id ? savedItem : s)
+          : [...sponsors, savedItem];
+        await persistSponsorsFallback(updatedList);
+        setShowSponsorModal(false);
+        setEditingSponsor(null);
+        await fetchSponsors();
+        return;
+      }
+
+      // Endpoint henüz deploy edilmemişse (404 vb.) settings + localStorage üzerinden kaydet
+      const fallbackItem = {
+        id: editingSponsor ? editingSponsor.id : Date.now(),
+        ...payload
+      };
+      const updatedList = editingSponsor
+        ? sponsors.map(s => s.id === editingSponsor.id ? fallbackItem : s)
+        : [...sponsors, fallbackItem];
+      await persistSponsorsFallback(updatedList);
+      setShowSponsorModal(false);
+      setEditingSponsor(null);
+    } catch (err) {
+      console.error('Sponsor save API error, using fallback:', err);
+      const fallbackItem = {
+        id: editingSponsor ? editingSponsor.id : Date.now(),
+        ...payload
+      };
+      const updatedList = editingSponsor
+        ? sponsors.map(s => s.id === editingSponsor.id ? fallbackItem : s)
+        : [...sponsors, fallbackItem];
+      await persistSponsorsFallback(updatedList);
+      setShowSponsorModal(false);
+      setEditingSponsor(null);
+    } finally {
+      setIsSavingSponsor(false);
+    }
+  };
+
+  const handleDeleteSponsor = (id) => {
+    requestConfirm("Bu sponsoru kalıcı olarak silmek istediğinize emin misiniz?", async () => {
+      try {
+        await fetch(`${API_BASE}/sponsors/${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.error('Sponsor delete API error:', err);
+      }
+      const updatedList = sponsors.filter(s => s.id !== id);
+      await persistSponsorsFallback(updatedList);
+    });
+  };
+
+  const handleDeleteAllSponsors = () => {
+    requestConfirm("Tüm sponsorları kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", async () => {
+      try {
+        await fetch(`${API_BASE}/sponsors/`, { method: 'DELETE' });
+      } catch (err) {
+        console.error('Sponsor delete all API error:', err);
+      }
+      await persistSponsorsFallback([]);
+    });
+  };
+
   // --- APPLICATIONS ---
   const handleDeleteApplication = (id) => {
     requestConfirm("Bu başvuruyu kalıcı olarak silmek istediğinize emin misiniz?", async () => {
@@ -1190,6 +1419,162 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* ADD/EDIT SPONSOR MODAL */}
+      <div className={`modal-overlay ${showSponsorModal ? 'active' : ''}`} onClick={() => setShowSponsorModal(false)}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '550px' }}>
+          <button className="modal-close" onClick={() => setShowSponsorModal(false)}><X size={24} /></button>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>
+            {editingSponsor ? 'Sponsoru Güncelle' : 'Yeni Sponsor / Destekçi Ekle'}
+          </h2>
+          <form onSubmit={handleSaveSponsor}>
+            <div className="form-group">
+              <label className="form-label">Sponsor / Firma Adı</label>
+              <input
+                type="text"
+                className="form-input"
+                required
+                placeholder="Örn: ABC Teknoloji A.Ş."
+                value={newSponsor.name}
+                onChange={(e) => setNewSponsor({ ...newSponsor, name: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Sponsor Logosu (URL veya Dosya Yükle)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="https://... logo adresi yapıştırın"
+                  value={newSponsor.logoUrl}
+                  onChange={(e) => setNewSponsor({ ...newSponsor, logoUrl: e.target.value })}
+                />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <label className="btn btn-outline" style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Upload size={16} /> Bilgisayardan Logo Yükle (PNG/SVG/JPG)
+                    <input type="file" accept="image/*" onChange={handleSponsorLogoUpload} style={{ display: 'none' }} />
+                  </label>
+                  {newSponsor.logoUrl && (
+                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>
+                      ✓ Logo hazır
+                    </span>
+                  )}
+                </div>
+
+                {newSponsor.logoUrl && (
+                  <div style={{
+                    width: '100%',
+                    height: '110px',
+                    borderRadius: '10px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid var(--border-color)',
+                    padding: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden'
+                  }}>
+                    <img src={newSponsor.logoUrl} alt="Logo Önizleme" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <Calendar size={15} style={{ color: 'var(--tfn-orange)' }} />
+                <span>Ne Zamana Kadar Sponsor? (Bitiş Tarihi)</span>
+              </label>
+
+              <input
+                type="date"
+                className="form-input"
+                required={!newSponsor.isIndefinite}
+                disabled={newSponsor.isIndefinite}
+                value={newSponsor.endDate}
+                onChange={(e) => setNewSponsor({ ...newSponsor, endDate: e.target.value })}
+                style={{ opacity: newSponsor.isIndefinite ? 0.5 : 1 }}
+              />
+
+              {/* Hızlı süre seçimleri */}
+              {!newSponsor.isIndefinite && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.6rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem' }}
+                    onClick={() => setNewSponsor(prev => ({ ...prev, endDate: addMonthsToToday(6) }))}
+                  >
+                    +6 Ay
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem' }}
+                    onClick={() => setNewSponsor(prev => ({ ...prev, endDate: addMonthsToToday(12) }))}
+                  >
+                    +1 Yıl
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem' }}
+                    onClick={() => setNewSponsor(prev => ({ ...prev, endDate: getEndOfCurrentYear() }))}
+                  >
+                    Yıl Sonu (31 Aralık)
+                  </button>
+                </div>
+              )}
+
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={newSponsor.isIndefinite}
+                  onChange={(e) => setNewSponsor(prev => ({
+                    ...prev,
+                    isIndefinite: e.target.checked,
+                    endDate: e.target.checked ? '' : (prev.endDate || addMonthsToToday(12))
+                  }))}
+                />
+                <span>Süresiz sponsor (bitiş tarihi sınırı yok)</span>
+              </label>
+
+              {!newSponsor.isIndefinite && newSponsor.endDate && (
+                <div style={{
+                  marginTop: '0.6rem',
+                  fontSize: '0.8rem',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '8px',
+                  backgroundColor: isSponsorExpired(newSponsor.endDate) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                  color: isSponsorExpired(newSponsor.endDate) ? '#ef4444' : '#10b981',
+                  border: `1px solid ${isSponsorExpired(newSponsor.endDate) ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`
+                }}>
+                  {isSponsorExpired(newSponsor.endDate)
+                    ? '⚠ Seçilen tarih geçmişte — bu sponsor sitedeki sponsorlar bölümünde gösterilmeyecektir.'
+                    : `✓ ${formatSponsorDate(newSponsor.endDate, 'tr')} tarihine kadar (dahil) sitede gösterilecek, sonrasında otomatik gizlenecektir.`}
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Web Sitesi (Opsiyonel)</label>
+              <input
+                type="url"
+                className="form-input"
+                placeholder="https://firma.com"
+                value={newSponsor.websiteUrl}
+                onChange={(e) => setNewSponsor({ ...newSponsor, websiteUrl: e.target.value })}
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary" disabled={isSavingSponsor} style={{ width: '100%' }}>
+              {isSavingSponsor ? 'Kaydediliyor...' : (editingSponsor ? 'Güncelle' : 'Sponsoru Kaydet')}
+            </button>
+          </form>
+        </div>
+      </div>
+
       {/* ADD/EDIT FEATURE MODAL */}
       <div className={`modal-overlay ${showFeatureModal ? 'active' : ''}`} onClick={() => setShowFeatureModal(false)}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
@@ -1341,6 +1726,7 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab('features')} className={`btn ${activeTab === 'features' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'features' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Özellik Kartları</button>
         <button onClick={() => setActiveTab('projects')} className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'projects' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Projeler</button>
         <button onClick={() => setActiveTab('media')} className={`btn ${activeTab === 'media' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'media' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Medya</button>
+        <button onClick={() => setActiveTab('sponsors')} className={`btn ${activeTab === 'sponsors' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'sponsors' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Sponsorlar</button>
         <button onClick={() => setActiveTab('social')} className={`btn ${activeTab === 'social' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'social' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Sosyal Medya</button>
         <button onClick={() => setActiveTab('applications')} className={`btn ${activeTab === 'applications' ? 'btn-primary' : 'btn-outline'}`} style={activeTab === 'applications' ? { borderBottom: '3px solid var(--tfn-orange)' } : {}}>Gelen Başvurular</button>
       </div>
@@ -1545,6 +1931,154 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* --- SPONSORS TAB --- */}
+        {activeTab === 'sponsors' && (() => {
+          const activeCount = sponsors.filter(s => !isSponsorExpired(s.endDate)).length;
+          const expiredCount = sponsors.length - activeCount;
+
+          return (
+            <div className="animate-fade-in">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '1.5rem', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Award size={22} style={{ color: 'var(--tfn-orange)' }} />
+                    <span>Sponsorlar & Destekçiler</span>
+                  </h2>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '999px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                    Aktif: {activeCount}
+                  </span>
+                  {expiredCount > 0 && (
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '0.25rem 0.65rem', borderRadius: '999px', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+                      Süresi Dolmuş: {expiredCount}
+                    </span>
+                  )}
+                  {lastModified.sponsors && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-secondary)', padding: '0.3rem 0.7rem', borderRadius: '999px', border: '1px solid var(--border-color)' }}>
+                      <Clock size={12} /> Son değişiklik: {lastModified.sponsors}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {sponsors.length > 0 && (
+                    <button onClick={handleDeleteAllSponsors} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', borderColor: '#ef4444' }}>
+                      <Trash2 size={16} /> Tümünü Sil
+                    </button>
+                  )}
+                  <button onClick={() => openSponsorModal()} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Plus size={16} /> Yeni Sponsor Ekle
+                  </button>
+                </div>
+              </div>
+
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                Eklediğiniz sponsorlar belirlediğiniz bitiş tarihine kadar sitedeki "Sponsorlarımız & Destekçilerimiz" bölümünde görünür. Süresi dolan firmalar siteden otomatik olarak gizlenir; dilediğiniz zaman düzenleyip süresini uzatabilirsiniz.
+              </p>
+
+              {sponsors.length === 0 ? (
+                <div style={{ padding: '2.5rem', textAlign: 'center', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)' }}>
+                  <Award size={36} style={{ opacity: 0.4, marginBottom: '0.75rem' }} />
+                  <p style={{ margin: 0 }}>Henüz kayıtlı sponsor bulunmamaktadır. "Yeni Sponsor Ekle" butonuna tıklayarak ilk sponsorunuzu ekleyebilirsiniz.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {sponsors.map((sponsor) => {
+                    const expired = isSponsorExpired(sponsor.endDate);
+                    const remainingDays = getSponsorRemainingDays(sponsor.endDate);
+
+                    return (
+                      <div
+                        key={sponsor.id}
+                        style={{
+                          padding: '1.25rem',
+                          border: `1px solid ${expired ? 'rgba(239, 68, 68, 0.35)' : 'var(--border-color)'}`,
+                          borderRadius: 'var(--radius-md)',
+                          display: 'flex',
+                          gap: '1.25rem',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          opacity: expired ? 0.72 : 1,
+                          backgroundColor: expired ? 'rgba(239, 68, 68, 0.03)' : 'transparent'
+                        }}
+                      >
+                        {/* Logo Preview */}
+                        <div style={{
+                          width: '96px',
+                          height: '68px',
+                          borderRadius: '10px',
+                          overflow: 'hidden',
+                          backgroundColor: '#ffffff',
+                          padding: '0.45rem',
+                          flex: '0 0 auto',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '1px solid var(--border-color)'
+                        }}>
+                          {sponsor.logoUrl ? (
+                            <img src={sponsor.logoUrl} alt={sponsor.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                          ) : (
+                            <Building2 size={26} style={{ color: '#94a3b8' }} />
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div style={{ flex: '1 1 220px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>{sponsor.name}</h3>
+                            {expired ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.73rem', fontWeight: '700', color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.12)', padding: '0.18rem 0.6rem', borderRadius: '999px' }}>
+                                <XCircle size={12} /> Süresi Doldu (Sitede gizli)
+                              </span>
+                            ) : !sponsor.endDate ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.73rem', fontWeight: '700', color: 'var(--tfn-blue)', backgroundColor: 'rgba(17, 57, 150, 0.1)', padding: '0.18rem 0.6rem', borderRadius: '999px' }}>
+                                <CheckCircle size={12} /> Süresiz Aktif
+                              </span>
+                            ) : (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.73rem', fontWeight: '700', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '0.18rem 0.6rem', borderRadius: '999px' }}>
+                                <CheckCircle size={12} />
+                                {remainingDays === 0 ? 'Aktif (Bugün son gün)' : `Aktif (${remainingDays} gün kaldı)`}
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <Calendar size={13} />
+                              {sponsor.endDate
+                                ? `Bitiş Tarihi: ${formatSponsorDate(sponsor.endDate, 'tr')}`
+                                : 'Bitiş Tarihi: Süresiz'}
+                            </span>
+                            {sponsor.websiteUrl && (
+                              <a
+                                href={sponsor.websiteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--primary-color)' }}
+                              >
+                                <ExternalLink size={13} /> Web Sitesi
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+                          <button onClick={() => openSponsorModal(sponsor)} className="btn-icon" style={{ color: 'var(--text-secondary)' }} title="Güncelle / Süre Uzat">
+                            <Edit size={18} />
+                          </button>
+                          <button onClick={() => handleDeleteSponsor(sponsor.id)} className="btn-icon" style={{ color: '#ef4444' }} title="Sil">
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* --- SOCIAL TAB --- */}
         {activeTab === 'social' && (

@@ -1,5 +1,7 @@
 import os
 import secrets
+import time
+from datetime import date
 from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -47,24 +49,91 @@ app.add_middleware(
 # Aktif oturum token'ları
 VALID_TOKENS = set()
 
+# Brute-force saldırı koruması (IP bazlı deneme takibi ve kilitleme)
+LOGIN_ATTEMPTS = {}
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_DURATION_SECONDS = 15 * 60  # 15 dakika
+
 # Health check endpoint — Cron job ve uptime monitor için
 @app.get("/health")
 @app.get("/health/")
 def health_check():
     return {"status": "ok"}
 
-# Admin Login Endpoint (Dakikada maks 10 deneme)
+# Admin Login Endpoint (Brute-force korumalı: Maks 5 deneme, ardından 15 dk IP kilidi)
 @app.post("/login", response_model=schemas.LoginResponse)
 @app.post("/login/", response_model=schemas.LoginResponse)
-@limiter.limit("10/minute")
+@limiter.limit("20/minute")
 def login(request: Request, req: schemas.LoginRequest):
+    # İstemci IP adresini al
+    client_ip = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        client_ip = forwarded.split(",")[0].strip()
+
+    now = time.time()
+    ip_data = LOGIN_ATTEMPTS.get(client_ip)
+
+    # 1. Kilitli mi kontrol et
+    if ip_data:
+        lock_until = ip_data.get("lockout_until", 0)
+        if lock_until > now:
+            remaining_seconds = int(lock_until - now)
+            remaining_minutes = max(1, (remaining_seconds + 59) // 60)
+            return {
+                "success": False,
+                "token": None,
+                "locked": True,
+                "remaining_seconds": remaining_seconds,
+                "message": f"Çok fazla hatalı deneme yaptınız. Güvenlik nedeniyle girişiniz {remaining_minutes} dakika boyunca kilitlendi."
+            }
+        # Kilit süresi dolmuşsa ve son denemenin üzerinden 1 saat geçtiyse sıfırla
+        if now - ip_data.get("last_attempt", 0) > 3600:
+            LOGIN_ATTEMPTS.pop(client_ip, None)
+            ip_data = None
+
     expected_user = os.getenv("ADMIN_USERNAME", "admin")
     expected_pass = os.getenv("ADMIN_PASSWORD", "admin")
+
+    # 2. Doğrulama başarılı mı?
     if req.username == expected_user and req.password == expected_pass:
+        LOGIN_ATTEMPTS.pop(client_ip, None)
         token = secrets.token_hex(16)
         VALID_TOKENS.add(token)
-        return {"success": True, "token": token, "message": "Giriş başarılı"}
-    return {"success": False, "token": None, "message": "Kullanıcı adı veya şifre hatalı"}
+        return {
+            "success": True,
+            "token": token,
+            "locked": False,
+            "remaining_seconds": 0,
+            "message": "Giriş başarılı"
+        }
+
+    # 3. Hatalı deneme kaydı
+    if not ip_data:
+        ip_data = {"attempts": 1, "lockout_until": 0, "last_attempt": now}
+        LOGIN_ATTEMPTS[client_ip] = ip_data
+    else:
+        ip_data["attempts"] = ip_data.get("attempts", 0) + 1
+        ip_data["last_attempt"] = now
+
+    remaining = MAX_LOGIN_ATTEMPTS - ip_data["attempts"]
+    if remaining <= 0:
+        ip_data["lockout_until"] = now + LOCKOUT_DURATION_SECONDS
+        return {
+            "success": False,
+            "token": None,
+            "locked": True,
+            "remaining_seconds": LOCKOUT_DURATION_SECONDS,
+            "message": f"5 kez hatalı giriş yapıldı. Güvenlik nedeniyle {LOCKOUT_DURATION_SECONDS // 60} dakika boyunca kilitlendiniz."
+        }
+
+    return {
+        "success": False,
+        "token": None,
+        "locked": False,
+        "remaining_seconds": 0,
+        "message": f"Hatalı kullanıcı adı veya şifre! Kalan deneme hakkı: {remaining}"
+    }
 
 # Token Doğrulama Endpoint
 @app.get("/verify-token")
@@ -284,3 +353,92 @@ def update_setting(key: str, setting: schemas.SettingBase, db: Session = Depends
     db.commit()
     db.refresh(db_setting)
     return db_setting
+
+# 12. SPONSORLAR / DESTEKÇİLER (SPONSORS)
+def _serialize_sponsor(item: models.Sponsor) -> dict:
+    return {
+        "id": item.id,
+        "name": item.name,
+        "logo_url": item.logo_url,
+        "logoUrl": item.logo_url,
+        "website_url": item.website_url,
+        "websiteUrl": item.website_url,
+        "end_date": item.end_date,
+        "endDate": item.end_date,
+    }
+
+def _is_sponsor_active(end_date_str) -> bool:
+    if not end_date_str:
+        return True
+    try:
+        return date.fromisoformat(end_date_str.strip()[:10]) >= date.today()
+    except ValueError:
+        return True
+
+@app.get("/sponsors", response_model=list[schemas.Sponsor])
+@app.get("/sponsors/", response_model=list[schemas.Sponsor])
+def list_sponsors(active_only: bool = Query(default=False), db: Session = Depends(get_db)):
+    items = db.query(models.Sponsor).order_by(models.Sponsor.id.asc()).all()
+    if active_only:
+        items = [s for s in items if _is_sponsor_active(s.end_date)]
+    return [_serialize_sponsor(item) for item in items]
+
+@app.post("/sponsors", response_model=schemas.Sponsor)
+@app.post("/sponsors/", response_model=schemas.Sponsor)
+def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db)):
+    s_dict = sponsor.model_dump()
+    logo = s_dict.get("logoUrl") or s_dict.get("logo_url") or ""
+    website = s_dict.get("websiteUrl") or s_dict.get("website_url") or ""
+    end_date = s_dict.get("endDate") if s_dict.get("endDate") is not None else s_dict.get("end_date")
+    if end_date is not None:
+        end_date = end_date.strip() or None
+
+    yeni_sponsor = models.Sponsor(
+        name=s_dict["name"].strip(),
+        logo_url=logo,
+        website_url=website,
+        end_date=end_date,
+    )
+    db.add(yeni_sponsor)
+    db.commit()
+    db.refresh(yeni_sponsor)
+    return _serialize_sponsor(yeni_sponsor)
+
+@app.put("/sponsors/{sponsor_id}", response_model=schemas.Sponsor)
+@app.put("/sponsors/{sponsor_id}/", response_model=schemas.Sponsor)
+def update_sponsor(sponsor_id: int, sponsor: schemas.SponsorCreate, db: Session = Depends(get_db)):
+    db_sponsor = db.query(models.Sponsor).filter(models.Sponsor.id == sponsor_id).first()
+    if not db_sponsor:
+        raise HTTPException(status_code=404, detail="Sponsor bulunamadı")
+    s_dict = sponsor.model_dump()
+    if s_dict.get("name") is not None:
+        db_sponsor.name = s_dict["name"].strip()
+    logo = s_dict.get("logoUrl") if s_dict.get("logoUrl") is not None else s_dict.get("logo_url")
+    if logo is not None:
+        db_sponsor.logo_url = logo
+    website = s_dict.get("websiteUrl") if s_dict.get("websiteUrl") is not None else s_dict.get("website_url")
+    if website is not None:
+        db_sponsor.website_url = website
+    end_date = s_dict.get("endDate") if s_dict.get("endDate") is not None else s_dict.get("end_date")
+    db_sponsor.end_date = end_date.strip() if isinstance(end_date, str) and end_date.strip() else None
+
+    db.commit()
+    db.refresh(db_sponsor)
+    return _serialize_sponsor(db_sponsor)
+
+@app.delete("/sponsors/{sponsor_id}")
+@app.delete("/sponsors/{sponsor_id}/")
+def delete_sponsor(sponsor_id: int, db: Session = Depends(get_db)):
+    db_sponsor = db.query(models.Sponsor).filter(models.Sponsor.id == sponsor_id).first()
+    if not db_sponsor:
+        raise HTTPException(status_code=404, detail="Sponsor bulunamadı")
+    db.delete(db_sponsor)
+    db.commit()
+    return {"message": "Sponsor silindi"}
+
+@app.delete("/sponsors", response_model=dict)
+@app.delete("/sponsors/", response_model=dict)
+def delete_all_sponsors(db: Session = Depends(get_db)):
+    db.query(models.Sponsor).delete()
+    db.commit()
+    return {"message": "Tüm sponsorlar silindi"}

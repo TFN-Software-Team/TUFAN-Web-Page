@@ -11,6 +11,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
     about: lang === 'tr' ? 'Hakkımızda' : 'About Us',
     projects: lang === 'tr' ? 'Projelerimiz' : 'Our Projects',
     media: lang === 'tr' ? 'Medya & Basın' : 'Media & Press',
+    sponsors: lang === 'tr' ? 'Sponsorlarımız' : 'Sponsors',
     joinTeam: lang === 'tr' ? 'Takıma Katıl' : 'Join the Team',
     logout: lang === 'tr' ? 'Çıkış Yap' : 'Sign Out',
     toggleTheme: lang === 'tr' ? 'Tema Değiştir' : 'Toggle Theme',
@@ -155,6 +156,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
                 <a href="#about" className="nav-link">{t.about}</a>
                 <a href="#projects" className="nav-link">{t.projects}</a>
                 <a href="#media" className="nav-link">{t.media}</a>
+                <a href="#sponsors" className="nav-link">{t.sponsors}</a>
                 <button onClick={onOpenApplicationModal} className="btn btn-primary">{t.joinTeam}</button>
               </>
             ) : (
@@ -214,6 +216,7 @@ export default function Navbar({ onOpenAdminModal, onOpenApplicationModal, isAdm
             <a href="#about" className="nav-mobile-link" onClick={closeMobile}>{t.about}</a>
             <a href="#projects" className="nav-mobile-link" onClick={closeMobile}>{t.projects}</a>
             <a href="#media" className="nav-mobile-link" onClick={closeMobile}>{t.media}</a>
+            <a href="#sponsors" className="nav-mobile-link" onClick={closeMobile}>{t.sponsors}</a>
             <button
               onClick={() => { onOpenApplicationModal(); closeMobile(); }}
               className="btn btn-primary"
